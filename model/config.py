@@ -16,10 +16,15 @@ def create_config():
     config['data_masking_duration'] = 2
     config['sheet_ban_list'] = ['4대보험 체납', '종합평가', '임금체불']
 
+    config['preprocessing'] = 'Flatten'
+
+    config['data_split_type'] = 'Random'
+    config['test_data_ratio'] = 0.3
+    config['random_state'] = 42
     config['SMOTE'] = True
 
-    # model: 'SVC', 'RandomForestClassifier'
-    config['model_type'] = None
+    # model: 'RandomForestClassifier'
+    config['model_type'] = 'RandomForestClassifier'
     config['save_model'] = True
 
     # 결과 저장

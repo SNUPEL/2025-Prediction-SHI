@@ -1,13 +1,15 @@
 import numpy as np
 import pandas as pd
+from preprocess_data import *
+from split_data import *
 
 
 class Company:
-    def __init__(self, company_id, catecory, subcategory, subsubcategory, start_date, end_date, date_range, label, condition):
+    def __init__(self, company_id, category, subcategory, sub_subcategory, start_date, end_date, date_range, label, condition):
         self.company_id = company_id
-        self.catecory = catecory
+        self.category = category
         self.subcategory = subcategory
-        self.subsubcategory = subsubcategory
+        self.sub_subcategory = sub_subcategory
         self.start_date = start_date
         self.end_date = end_date
         self.date_range = date_range
@@ -24,6 +26,15 @@ class Data:
         self.df_raw_data_dict = dict()
         self.sheet_name_list = list()
         self.company_dict = dict()
+
+        self.df_model = pd.DataFrame()
+        self.df_x = pd.DataFrame()
+        self.df_y = pd.DataFrame()
+        self.df_x_train = pd.DataFrame()
+        self.df_y_train = pd.DataFrame()
+        self.df_x_test = pd.DataFrame()
+        self.df_y_test = pd.DataFrame()
+        self.df_y_pred = pd.DataFrame()
 
     def load_data(self):
         self.df_raw_data_dict = pd.read_excel(self.config['data_file_path'], sheet_name=None)
@@ -64,7 +75,6 @@ class Data:
 
         for sheet_name in self.sheet_name_list:
             if sheet_name in self.sheet_ban_list:
-                print(sheet_name)
                 continue
             else:
                 df_sheet = self.df_raw_data_dict[sheet_name]
@@ -90,3 +100,25 @@ class Data:
                         print(f"Error: config['use_all_data'] '{self.config['use_all_data']}' was not found.")
                         return False
         print('Data has been loaded successfully')
+
+    def preprocess_data(self):
+        if self.config['preprocessing'] == 'Flatten':
+            flatten(self)
+        else:
+            print(f"Error: config['preprocessing'] '{self.config['preprocessing']}' was not found.")
+        print('Data has been preprocessed successfully')
+
+    def split_data(self):
+        if self.config['data_split_type'] == 'Random':
+            random_split(self)
+        else:
+            print(f"Error: config['data_split_type'] '{self.config['data_split_type']}' was not found.")
+        print('Data has been split successfully')
+
+        if self.config['SMOTE']:
+            SMOTE(self)
+        else:
+            pass
+
+
+
