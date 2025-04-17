@@ -59,13 +59,18 @@ class Data:
             r_label = True if pd.to_datetime(label_date) >= r_end_date + pd.DateOffset(
                 months=1 - data_masking_duration) else False
             r_label = False if row[column[5]] == '-' else r_label
-            if r_label:
-                date_range = list(
-                    pd.date_range(start=r_end_date - pd.DateOffset(months=data_duration + data_masking_duration - 1),
-                                  end=r_end_date - pd.DateOffset(months=data_masking_duration), freq='MS'))
-            else:
-                date_range = list(pd.date_range(start=pd.to_datetime(label_date) - pd.DateOffset(months=data_duration),
-                                                end=pd.to_datetime(label_date) - pd.DateOffset(months=1), freq='MS'))
+
+            # 후 : 종결된 회사, 활동 중 회사까지 마스킹 처리 되도록 수정 , 전 : 종결된 회사, 활동 중 회사 구분 되어 마스킹 됨 (성유)
+            date_range = list(
+                pd.date_range(start=r_end_date - pd.DateOffset(months=data_duration + data_masking_duration - 1),
+                              end=r_end_date - pd.DateOffset(months=data_masking_duration), freq='MS'))
+            # if r_label:
+            #     date_range = list(
+            #         pd.date_range(start=r_end_date - pd.DateOffset(months=data_duration + data_masking_duration - 1),
+            #                       end=r_end_date - pd.DateOffset(months=data_masking_duration), freq='MS'))
+            # else:
+            #     date_range = list(pd.date_range(start=pd.to_datetime(label_date) - pd.DateOffset(months=data_duration),
+            #                                     end=pd.to_datetime(label_date) - pd.DateOffset(months=1), freq='MS'))
             r_condition = all(element in iter(date_cols) for element in date_range) and r_start_date <= date_range[
                 0] and r_end_date >= date_range[-1]
             self.company_dict[row[column[0]]] = Company(row[column[0]], row[column[1]], row[column[2]], row[column[3]],
