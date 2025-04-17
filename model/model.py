@@ -2,7 +2,8 @@ from get_RandomForestClassifier import *
 from evaluate_model import *
 from get_AdaBoostClassifier import *
 from get_ExtraTreesClassifier import *
-from get_RidgeClassifier import *
+from get_LinearClassifier import *
+from get_XGBClassifier import *
 
 
 class Model:
@@ -22,6 +23,10 @@ class Model:
             get_ExtraTreesClassifier(self)
         elif self.config['model_type'] == 'RidgeClassifier':
             get_RidgeClassifier(self)
+        elif self.config['model_type'] == 'SGDClassifier':
+            get_SGDClassifier(self)
+        elif self.config['model_type'] == 'XGBClassifier':
+            get_XGBClassifier(self)
         else:
             print(f"Error: config['model_type'] '{self.config['model_type']}' was not found.")
         print(f"Model {self.config['model_type']} has been trained successfully")

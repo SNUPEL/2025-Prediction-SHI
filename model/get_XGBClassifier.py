@@ -1,9 +1,12 @@
-from sklearn.linear_model import RidgeClassifier
+from xgboost import XGBClassifier
 import pandas as pd
 import joblib
 
-def get_RidgeClassifier(self):
-    self.model = RidgeClassifier(
+def get_XGBClassifier(self):
+    self.model = XGBClassifier(
+        n_estimators=100,
+        learning_rate=0.1,
+        max_depth=20,
         random_state=self.config['random_state']
     )
 
@@ -18,4 +21,4 @@ def get_RidgeClassifier(self):
 
     # save model
     if self.config['save_model']:
-        joblib.dump(self.model, self.config['result_folder_path'] + '/RidgeClassifier model.joblib')
+        joblib.dump(self.model, self.config['result_folder_path'] + '/XGBClassifier model.joblib')

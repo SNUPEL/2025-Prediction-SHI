@@ -39,6 +39,15 @@ def create_config():
     config['model_type'] = 'RidgeClassifier'
     config['save_model'] = True
 
+    # model: 'SGDClassifier'
+    config['model_type'] = 'SGDClassifier'
+    config['save_model'] = True
+
+    # model: 'XGBClassifier'
+    config['model_type'] = 'XGBClassifier'
+    config['save_model'] = True
+
+
     # 결과 저장
     config['ymd'] = time.strftime('%Y%m%d')
     config['hour'] = str(time.localtime().tm_hour)
