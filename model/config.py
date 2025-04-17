@@ -24,7 +24,19 @@ def create_config():
     config['SMOTE'] = True
 
     # model: 'RandomForestClassifier'
-    config['model_type'] = 'RandomForestClassifier'
+    # config['model_type'] = 'RandomForestClassifier'
+    # config['save_model'] = True
+
+    # model: 'AdaBoostClassifier'
+    # config['model_type'] = 'AdaBoostClassifier'
+    # config['save_model'] = True
+
+    # model: 'ExtraTreesClassifier'
+    config['model_type'] = 'ExtraTreesClassifier'
+    config['save_model'] = True
+
+    # model: 'RidgeClassifier'
+    config['model_type'] = 'RidgeClassifier'
     config['save_model'] = True
 
     # 결과 저장

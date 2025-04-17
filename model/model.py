@@ -1,5 +1,8 @@
 from get_RandomForestClassifier import *
 from evaluate_model import *
+from get_AdaBoostClassifier import *
+from get_ExtraTreesClassifier import *
+from get_RidgeClassifier import *
 
 
 class Model:
@@ -13,6 +16,12 @@ class Model:
     def make_model(self):
         if self.config['model_type'] == 'RandomForestClassifier':
             get_RandomForestClassifier(self)
+        elif self.config['model_type'] == 'AdaBoostClassifier':
+            get_AdaBoostClassifier(self)
+        elif self.config['model_type'] == 'ExtraTreesClassifier':
+            get_ExtraTreesClassifier(self)
+        elif self.config['model_type'] == 'RidgeClassifier':
+            get_RidgeClassifier(self)
         else:
             print(f"Error: config['model_type'] '{self.config['model_type']}' was not found.")
         print(f"Model {self.config['model_type']} has been trained successfully")
