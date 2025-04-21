@@ -21,32 +21,37 @@ def create_config():
     config['data_split_type'] = 'Random'
     config['test_data_ratio'] = 0.3
     config['random_state'] = 42
-    config['SMOTE'] = True
+    config['SMOTE'] = False
 
     # model: 'RandomForestClassifier'
-    # config['model_type'] = 'RandomForestClassifier'
-    # config['save_model'] = True
+    config['model_type'] = 'RandomForestClassifier'
+    config['save_model'] = True
 
     # model: 'AdaBoostClassifier'
     # config['model_type'] = 'AdaBoostClassifier'
     # config['save_model'] = True
 
     # model: 'ExtraTreesClassifier'
-    config['model_type'] = 'ExtraTreesClassifier'
-    config['save_model'] = True
+    # config['model_type'] = 'ExtraTreesClassifier'
+    # config['save_model'] = True
 
     # model: 'RidgeClassifier'
-    config['model_type'] = 'RidgeClassifier'
-    config['save_model'] = True
+    # config['model_type'] = 'RidgeClassifier'
+    # config['save_model'] = True
 
     # model: 'SGDClassifier'
-    config['model_type'] = 'SGDClassifier'
-    config['save_model'] = True
+    # config['model_type'] = 'SGDClassifier'
+    # config['save_model'] = True
 
     # model: 'XGBClassifier'
-    config['model_type'] = 'XGBClassifier'
-    config['save_model'] = True
+    # config['model_type'] = 'XGBClassifier'
+    # config['save_model'] = True
 
+    # 평가 결과 관련 설정
+    config['detailed_results'] = True  # 상세 결과 출력 여부
+    config['save_predictions'] = True  # 예측 결과 저장 여부
+    config['save_confusion_matrix'] = True  # 혼동 행렬 저장 여부
+    config['save_metrics'] = True  # 성능 지표 저장 여부
 
     # 결과 저장
     config['ymd'] = time.strftime('%Y%m%d')
