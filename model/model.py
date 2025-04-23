@@ -4,6 +4,7 @@ from get_AdaBoostClassifier import *
 from get_ExtraTreesClassifier import *
 from get_LinearClassifier import *
 from get_XGBClassifier import *
+from get_SVC import *
 import os
 import time
 import matplotlib.pyplot as plt
@@ -64,6 +65,8 @@ class Model:
             get_SGDClassifier(self)
         elif self.config['model_type'] == 'XGBClassifier':
             get_XGBClassifier(self)
+        elif self.config['model_type'] == 'SVC':
+            get_SVC(self)
         else:
             print(f"Error: config['model_type'] '{self.config['model_type']}' was not found.")
         print(f"Model {self.config['model_type']} has been trained successfully")

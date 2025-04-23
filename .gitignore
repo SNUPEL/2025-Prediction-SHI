@@ -129,3 +129,5 @@ dmypy.json
 *.joblib
 *.tmp
 *.docx
+*.csv
+*.txt

@@ -13,8 +13,8 @@ def create_config():
     config['data_end_date'] = '2024-10-01'
     config['data_duration'] = 12
     config['label_date'] = '2024-10-01'  # 해당 월 기준으로 계약 종결 여부 판단, 직전월까지의 데이터 사용
-    config['data_masking_duration'] = 2
-    config['sheet_ban_list'] = ['4대보험 체납', '종합평가', '임금체불']
+    config['data_masking_duration'] = 0
+    config['sheet_ban_list'] =  ['임금체불', '4대보험 체납', '종합평가', '입사자', '퇴사율', '퇴사자', '본공률(시급월급)', '4대보험 가입자', '안전사고 건수(높음)']
 
     config['preprocessing'] = 'Flatten'
 
@@ -24,8 +24,8 @@ def create_config():
     config['SMOTE'] = False
 
     # model: 'RandomForestClassifier'
-    config['model_type'] = 'RandomForestClassifier'
-    config['save_model'] = True
+    # config['model_type'] = 'RandomForestClassifier'
+    # config['save_model'] = True
 
     # model: 'AdaBoostClassifier'
     # config['model_type'] = 'AdaBoostClassifier'
@@ -46,6 +46,10 @@ def create_config():
     # model: 'XGBClassifier'
     # config['model_type'] = 'XGBClassifier'
     # config['save_model'] = True
+
+    # model: 'SVC'
+    config['model_type'] = 'SVC'
+    config['save_model'] = True
 
     # 평가 결과 관련 설정
     config['detailed_results'] = True  # 상세 결과 출력 여부
