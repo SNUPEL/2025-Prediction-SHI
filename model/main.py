@@ -14,10 +14,9 @@ if __name__ == '__main__':
 
     data = Data(config)
     data.load_data()
-    data.preprocess_data()
-    
+
     print("\n==== 데이터 분할 및 SMOTE 적용 ====")
-    data.split_data()
+    data.preprocess_data()
     print("=================================\n")
 
     model = Model(config, data)

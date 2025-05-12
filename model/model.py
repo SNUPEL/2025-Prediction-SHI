@@ -97,7 +97,7 @@ class Model:
         test_company_list = list(self.data.df_x_test['company_id'])
         rows = []
         for company_id in test_company_list:
-            company = self.data.company_dict[company_id]
+            company = self.data.company_dict[int(company_id.split('_', 1)[0])]
             row = {"company_id": company_id,
                    "start_date": company.date_range[0],
                    "end_date": company.date_range[-1]}
@@ -140,8 +140,8 @@ class Model:
             cm = self.result['confusion_matrix']
             f.write("4. 혼동 행렬\n")
             f.write(f"            | 예측: Normal | 예측: Caution\n")
-            f.write(f"   실제: Normal  | {cm[0][0]}          | {cm[0][1]}\n")
-            f.write(f"   실제: Caution | {cm[1][0]}          | {cm[1][1]}\n\n")
+            # f.write(f"   실제: Normal  | {cm[0][0]}          | {cm[0][1]}\n")
+            # f.write(f"   실제: Caution | {cm[1][0]}          | {cm[1][1]}\n\n")
             
             f.write(f"===== 저장 시간: {time.strftime('%Y-%m-%d %H:%M:%S')} =====\n")
         

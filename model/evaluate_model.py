@@ -101,8 +101,8 @@ def evaluate_classifier(self):
         
         print("\n----- 혼동 행렬 -----")
         print(f"        | 예측: 거래중(0) | 예측: 경영악화(1)")
-        print(f"실제: 거래중(0)  | {cm[0][0]}            | {cm[0][1]}")
-        print(f"실제: 경영악화(1) | {cm[1][0]}            | {cm[1][1]}")
+        # print(f"실제: 거래중(0)  | {cm[0][0]}            | {cm[0][1]}")
+        # print(f"실제: 경영악화(1) | {cm[1][0]}            | {cm[1][1]}")
         print("==========================\n")
     else:
         print(f"Accuracy: {self.result['accuracy']}, Precision: {self.result['precision']}")

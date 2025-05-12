@@ -6,49 +6,28 @@ import pandas as pd
 def create_config():
     config = dict()
 
-    config['data_file_path'] = '../data/사내협력사 현황(철수사&거래 협력사)_ Data_송부_수정.xlsx'
-    # All: 당사 투입일 ~ 당사 철수일, Duration: 당사철수일까지의 특정 개월 수, Padding: 모든 기간
-    config['use_all_data'] = 'Duration'
+    config['data_file_path'] = '../data/사내협력사 현황(철수사&거래 협력사)_ Data_추가(250417).xlsx'
+    config['sub_data_file_path'] = '../data/사내협력사 현황(철수사&거래 협력사)_출근인력(추가) -송부.xlsx'
+    # All: 당사 투입일 ~ 당사 철수일, Padding: 모든 기간
+    config['use_all_data'] = 'All'
     config['data_start_date'] = '2016-02-01'
     config['data_end_date'] = '2024-10-01'
     config['data_duration'] = 12
-    config['label_date'] = '2024-10-01'  # 해당 월 기준으로 계약 종결 여부 판단, 직전월까지의 데이터 사용
+    config['label_date'] = '2024-08-01'  # 해당 월 기준으로 계약 종결 여부 판단, 직전월까지의 데이터 사용
+    config['label_duration'] = 1
     config['data_masking_duration'] = 0
-    config['sheet_ban_list'] =  ['임금체불', '4대보험 체납', '종합평가', '입사자', '퇴사율', '퇴사자', '본공률(시급월급)', '4대보험 가입자', '안전사고 건수(높음)']
+    config['sheet_ban_list'] = ['경영 영향1', '경영 영향2', '종합평가', '입사자', '퇴사율', '퇴사자', '본공률(시급월급)', '4대보험 가입자', '안전사고 건수(높음)']
+    config['Flatten'] = True
 
-    config['preprocessing'] = 'Flatten'
-
-    config['data_split_type'] = 'Random'
+    # overlap: 기간이 겹쳐도 됨, no_overlap: 겹칠 수 없음
+    config['data_split_type'] = 'overlap'
     config['test_data_ratio'] = 0.3
     config['random_state'] = 42
-    config['SMOTE'] = False
+    config['SMOTE'] = True
 
-    # model: 'RandomForestClassifier'
-    # config['model_type'] = 'RandomForestClassifier'
-    # config['save_model'] = True
-
-    # model: 'AdaBoostClassifier'
-    # config['model_type'] = 'AdaBoostClassifier'
-    # config['save_model'] = True
-
-    # model: 'ExtraTreesClassifier'
-    # config['model_type'] = 'ExtraTreesClassifier'
-    # config['save_model'] = True
-
-    # model: 'RidgeClassifier'
-    # config['model_type'] = 'RidgeClassifier'
-    # config['save_model'] = True
-
-    # model: 'SGDClassifier'
-    # config['model_type'] = 'SGDClassifier'
-    # config['save_model'] = True
-
-    # model: 'XGBClassifier'
-    # config['model_type'] = 'XGBClassifier'
-    # config['save_model'] = True
-
-    # model: 'SVC'
-    config['model_type'] = 'SVC'
+    # model: 'RandomForestClassifier', 'AdaBoostClassifier', 'ExtraTreesClassifier', 'RidgeClassifier', 'SGDClassifier'
+    # 'XGBClassifier', 'SVC'
+    config['model_type'] = 'ExtraTreesClassifier'
     config['save_model'] = True
 
     # 평가 결과 관련 설정

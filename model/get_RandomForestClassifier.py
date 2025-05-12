@@ -5,7 +5,7 @@ import pandas as pd
 
 def get_RandomForestClassifier(self):
     self.model = RandomForestClassifier(n_estimators=100,
-                                        max_depth=20,
+                                        max_depth=50,
                                         min_samples_split=3,
                                         min_samples_leaf=1,
                                         max_features='log2',
