@@ -53,6 +53,9 @@ class Model:
         return False
 
     def make_model(self):
+        self._set_korean_font()
+
+        # --- 모델 선택 및 학습 블록 (한 번만 있어야 합니다) ---
         if self.config['model_type'] == 'RandomForestClassifier':
             get_RandomForestClassifier(self)
         elif self.config['model_type'] == 'AdaBoostClassifier':
@@ -69,14 +72,25 @@ class Model:
             get_SVC(self)
         else:
             print(f"Error: config['model_type'] '{self.config['model_type']}' was not found.")
-        print(f"Model {self.config['model_type']} has been trained successfully")
+
+        # --- 학습 입력 데이터 엑셀 파일 저장 코드 (모델 학습 후) ---
+        if self.model is not None: # 모델이 성공적으로 생성/학습된 경우에만 저장
+            try:
+                train_data_path = self.config['result_folder_path'] + '/training_data.xlsx'
+                self.data.df_x_train.to_excel(train_data_path, index=False)
+                print(f"\n=== 학습 입력 데이터 (df_x_train) 저장 완료: {train_data_path} ===")
+            except Exception as e:
+                print(f"\n!!! 학습 입력 데이터 저장 중 오류 발생: {e} !!!")
+
+            print(f"Model {self.config['model_type']} has been trained successfully")
+        else:
+             print("모델 학습이 제대로 완료되지 않아 입력 데이터를 저장하지 않습니다.")
 
     def evaluate_model(self):
         evaluate_classifier(self)
         print('Model has been evaluated successfully')
 
     def save_result(self):
-        # 예측값과 실제값 변환 (Series → 문자열)
         test_labels = pd.Series(
             np.where(self.data.df_y_test == 0, 'Normal', 'Caution'),
             index=self.data.df_y_test.index,
@@ -140,8 +154,8 @@ class Model:
             cm = self.result['confusion_matrix']
             f.write("4. 혼동 행렬\n")
             f.write(f"            | 예측: Normal | 예측: Caution\n")
-            # f.write(f"   실제: Normal  | {cm[0][0]}          | {cm[0][1]}\n")
-            # f.write(f"   실제: Caution | {cm[1][0]}          | {cm[1][1]}\n\n")
+            f.write(f"   실제: Normal  | {cm[0][0]}          | {cm[0][1]}\n")
+            f.write(f"   실제: Caution | {cm[1][0]}          | {cm[1][1]}\n\n")
             
             f.write(f"===== 저장 시간: {time.strftime('%Y-%m-%d %H:%M:%S')} =====\n")
         
