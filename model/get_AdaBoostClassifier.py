@@ -2,8 +2,9 @@ from sklearn.ensemble import AdaBoostClassifier
 import pandas as pd
 import joblib
 
+
 def get_AdaBoostClassifier(self):
-    self.model = AdaBoostClassifier(n_estimators=250, random_state=self.config['random_state'])
+    self.model = AdaBoostClassifier(n_estimators=100, random_state=self.config['random_state'])
     self.model.fit(self.data.df_x_train.drop(columns=["company_id"]), self.data.df_y_train)
     self.data.df_y_pred = pd.Series(
         self.model.predict(self.data.df_x_test.drop(columns=["company_id"])),

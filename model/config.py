@@ -19,37 +19,39 @@ def create_config():
 
     # 데이터 포인트의 계산된 label_date가 이 날짜보다 같거나 이전이면 훈련 세트, 이후이면 테스트 세트
     # 일반적으로 config['label_date']보다 이전 날짜로 설정(label_duration 및 데이터 마스킹 기간까지 고려하여 설정)
-    config['split_cutoff_date'] = '2024-03-01'
+    config['split_cutoff_date'] = '2023-10-01'  # 굉장히 넉넉히 줄 것
 
     # 각 데이터 포인트의 과거 데이터 기간(길이) 설정
     config['data_duration'] = 6
     # 테스트 예측 기간의 끝점을 정의하거나 load_data에서 회사 데이터 기간 제한에 사용되는 날짜
-    config['label_date'] = '2024-08-01'
+    config['label_date'] = '2024-10-01'
     # 데이터 기간 끝 ~ 레이블 시점 간격 설정 (테스트 예측 기간 계산에도 사용)
     config['label_duration'] = 3
 
     # 데이터 마스킹 기간 설정 (load_data에서 회사의 종료일 조정에 사용) 사용안함
     # config['data_masking_duration'] = 0
     # 데이터 로딩 시 제외할 시트 이름 목록
-    config['sheet_ban_list'] = ['경영 영향1', '경영 영향2', '종합평가', '입사자', '퇴사율', '퇴사자', '본공률(시급월급)', '4대보험 가입자', '안전사고 건수(높음)']
+    config['sheet_ban_list'] = ['경영 영향1', '경영 영향2', '종합평가', '입사자', '입사율', '퇴사율', '본공률(시급월급)',
+                                '4대보험 가입자', '본공률(4대보험)', '안전사고 건수(중간, 낮음)', '안전사고 건수(높음)',
+                                '공수능률',  '시급,월급제 인원', '투입인원', '환산능률']
+
     config['Flatten'] = True
 
-
-
-    config['data_split_type'] = 'overlap' # 사용안함
-    config['test_data_ratio'] = 0.3 # 사용안함
+    config['data_split_type'] = 'overlap'  # 사용안함
+    config['test_data_ratio'] = 0.3  # 사용안함
 
     # 랜덤 시드 설정
-    config['random_state'] = 42 # 랜덤 시드
+    config['random_state'] = 42  # 랜덤 시드
 
     # SMOTE 오버샘플링 사용 여부 설정
     # SMOTE 사용시 경영 악화 데이터 증강으로 예측도 높아짐
     config['SMOTE'] = True
 
-    # model: 'RandomForestClassifier', 'AdaBoostClassifier', 'ExtraTreesClassifier', 'RidgeClassifier', 'SGDClassifier', 'XGBClassifier', 'SVC'
-    config['model_type'] = 'AdaBoostClassifier' # 사용할 모델 타입
+    # model: 'RandomForestClassifier', 'AdaBoostClassifier', 'ExtraTreesClassifier',
+    # 'RidgeClassifier', 'SGDClassifier', 'XGBClassifier', 'SVC'
+    config['model_type'] = 'AdaBoostClassifier'  # 사용할 모델 타입
     # 학습된 모델 저장 여부 설정
-    config['save_model'] = True
+    config['save_model'] = False
 
     config['detailed_results'] = True  # 상세 결과 출력 여부
     config['save_predictions'] = True  # 예측 결과 저장 여부

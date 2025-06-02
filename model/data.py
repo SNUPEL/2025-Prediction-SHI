@@ -3,10 +3,12 @@ import pandas as pd
 from load_data import *
 from preprocess_data import *
 
+
 class Data:
     def __init__(self, config):
         self.config = config
         self.label_date = pd.to_datetime(self.config['label_date']).replace(day=1)
+        self.config_start_date_dt = pd.to_datetime(self.config['data_start_date']).replace(day=1)
         self.sheet_ban_list = self.config['sheet_ban_list']
         self.df_raw_data_dict = dict()
         self.sheet_name_list = list()
@@ -25,18 +27,17 @@ class Data:
 
     def load_data(self):
         load_data(self)
-        print('Data has been loaded successfully')
 
     def preprocess_data(self):
         split_data(self)
         # 분할 방식에 대한 메시지 출력 수정
         print('Data has been split successfully using standard chronological split')
 
-        # flatten 함수 호출
-        if self.config['Flatten']:
-            flatten(self)
-        else:
-            pass
+        # # flatten 함수 호출
+        # if self.config['Flatten']:
+        #     flatten(self)
+        # else:
+        #     pass
 
         # SMOTE 오버샘플링 적용
         if self.config['SMOTE']:
