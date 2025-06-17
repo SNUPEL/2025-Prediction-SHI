@@ -4,12 +4,13 @@ import pandas as pd
 
 
 def get_RandomForestClassifier(self):
-    self.model = RandomForestClassifier(n_estimators=100,
-                                        max_depth=50,
-                                        min_samples_split=3,
-                                        min_samples_leaf=1,
-                                        max_features='log2',
-                                        random_state=self.config['random_state'])
+    self.model = RandomForestClassifier(n_estimators=1000,
+                                        max_depth=25,
+                                        min_samples_split=2,
+                                        min_samples_leaf=20,
+                                        max_features='sqrt',
+                                        random_state=self.config['random_state'],
+                                        n_jobs=-1)
 
     self.model.fit(self.data.df_x_train.drop(columns=["company_id"]), self.data.df_y_train)
     # self.data.df_y_pred = self.model.predict(self.data.df_x_test.drop(columns=["company_id"]))

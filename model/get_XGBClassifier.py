@@ -2,12 +2,16 @@ from xgboost import XGBClassifier
 import pandas as pd
 import joblib
 
+
 def get_XGBClassifier(self):
     self.model = XGBClassifier(
-        n_estimators=100,
-        learning_rate=0.1,
-        max_depth=20,
-        random_state=self.config['random_state']
+        n_estimators=1000,
+        learning_rate=0.001,
+        max_depth=50,
+        gamma=0.1,
+        min_child_weight=1,
+        random_state=self.config['random_state'],
+        n_jobs=-1
     )
 
     self.model.fit(self.data.df_x_train.drop(columns=["company_id"]), self.data.df_y_train)

@@ -1,6 +1,7 @@
 from get_RandomForestClassifier import *
 from evaluate_model import *
 from get_AdaBoostClassifier import *
+from get_AdaBoostClassifier_optimized import *
 from get_ExtraTreesClassifier import *
 from get_LinearClassifier import *
 from get_XGBClassifier import *
@@ -60,6 +61,7 @@ class Model:
             get_RandomForestClassifier(self)
         elif self.config['model_type'] == 'AdaBoostClassifier':
             get_AdaBoostClassifier(self)
+            # get_AdaBoostClassifier_optimized(self)
         elif self.config['model_type'] == 'ExtraTreesClassifier':
             get_ExtraTreesClassifier(self)
         elif self.config['model_type'] == 'RidgeClassifier':

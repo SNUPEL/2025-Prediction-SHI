@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 from load_data import *
 from preprocess_data import *
+from save_graph import *
 
 
 class Data:
@@ -25,6 +26,8 @@ class Data:
         self.df_y_test = pd.DataFrame()
         self.df_y_pred = pd.DataFrame()
 
+        self.scaler_dict = dict()
+
     def load_data(self):
         load_data(self)
 
@@ -33,14 +36,25 @@ class Data:
         # 분할 방식에 대한 메시지 출력 수정
         print('Data has been split successfully using standard chronological split')
 
+        if self.config['save_graph']:
+            save_PCA_LDA(self, graph_name='after_split')
+
         # # flatten 함수 호출
         # if self.config['Flatten']:
         #     flatten(self)
         # else:
         #     pass
 
+        if self.config['undersampling']:
+            apply_undersampling(self)
+        else:
+            pass
+
         # SMOTE 오버샘플링 적용
-        if self.config['SMOTE']:
+        if self.config['oversampling']:
             apply_SMOTE(self)
         else:
             pass
+
+        if self.config['save_graph']:
+            save_PCA_LDA(self, graph_name='after_under_oversampling')

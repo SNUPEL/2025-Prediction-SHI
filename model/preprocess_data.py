@@ -1,7 +1,11 @@
 import pandas as pd
+import numpy as np
 from sklearn.model_selection import train_test_split
 from imblearn.over_sampling import SMOTE as SMOTESampler
-import numpy as np
+from imblearn.over_sampling import BorderlineSMOTE
+from imblearn.under_sampling import TomekLinks
+from imblearn.under_sampling import EditedNearestNeighbours
+from imblearn.under_sampling import NearMiss
 
 
 def split_data(self):
@@ -28,7 +32,8 @@ def split_data(self):
 
             # 계산된 label_date를 기준으로 이 데이터 포인트의 레이블(True/False) 결정
             # 이 로직은 기존과 동일하게 유지됩니다.
-            if company.label and company.end_date - pd.DateOffset(months=self.config['label_duration'] - 1) <= label_date <= company.end_date:
+            if company.label and company.end_date - pd.DateOffset(
+                    months=self.config['label_duration'] - 1) <= label_date <= company.end_date:
                 row = {"company_id": name, "label": True}  # True: 경영악화
             else:
                 row = {"company_id": name, "label": False}  # False: 거래중 또는 다른 상태
@@ -53,7 +58,8 @@ def split_data(self):
                 pass
 
             if date <= self.split_cutoff_date:
-                if date + pd.DateOffset(months=self.config['data_duration'] - 1) > self.split_cutoff_date:
+                if self.config['overlap'] and date + pd.DateOffset(
+                        months=self.config['data_duration'] - 1) > self.split_cutoff_date:
                     continue
                 rows_train.append(row)
             elif date > self.split_cutoff_date:
@@ -91,6 +97,78 @@ def split_data(self):
     # --- DataFrame 생성 및 최종 처리 끝 ---
 
 
+def apply_undersampling(self):
+    print("\n=== undersampling 시작 ===")
+
+    # 원본 company_id 저장 및 X_train, y_train 준비
+    if 'company_id' in self.df_x_train.columns:
+        company_ids_original = self.df_x_train['company_id'].values
+        X_train_for_undersampling = self.df_x_train.drop(columns=["company_id"])
+        print("  'company_id' 컬럼을 ID로 분리했습니다.")
+    else:
+        company_ids_original = None
+        X_train_for_undersampling = self.df_x_train.copy()
+        print("  'company_id' 컬럼이 없어 피처만 사용합니다.")
+
+    y_train_for_undersampling = self.df_y_train.copy()
+
+    # 클래스 불균형 확인
+    class_counts_before = np.bincount(y_train_for_undersampling.astype(int))
+    print(
+        f"undersampling 적용 전 클래스 분포: 거래중={class_counts_before[0]}, 경영악화={class_counts_before[1] if len(class_counts_before) > 1 else 0}")
+    orig_total_samples = len(y_train_for_undersampling)
+    print(f"총 훈련 데이터: {orig_total_samples}개 샘플")
+
+    if self.config['undersampling'] == 'ENN':
+        # Edited Nearest Neighbours (ENN) 적용
+        # n_neighbors: 확인하는 이웃 수
+        sampler = EditedNearestNeighbours(sampling_strategy='auto', n_neighbors=self.config['ENN_n_neighbors'],
+                                          kind_sel='all', n_jobs=-1)
+    elif self.config['undersampling'] == 'tomek_link':
+        sampler = TomekLinks(sampling_strategy='auto', n_jobs=-1)
+    elif self.config['undersampling'] == 'nearmiss':  # 이 부분만 추가하면 끝!
+        sampler = NearMiss(version=1, n_jobs=-1)
+    else:
+        return 1
+    X_input = X_train_for_undersampling.to_numpy() if isinstance(X_train_for_undersampling,
+                                                                 pd.DataFrame) else X_train_for_undersampling
+    y_input = y_train_for_undersampling.to_numpy() if isinstance(y_train_for_undersampling,
+                                                                 pd.Series) else y_train_for_undersampling
+
+    X_resampled, y_resampled = sampler.fit_resample(X_input, y_input)
+    # 선택된(유지된) 샘플의 원본 인덱스를 가져옵니다.
+    kept_indices = sampler.sample_indices_
+
+    # 결과 클래스 분포 확인
+    resampled_class_counts = np.bincount(y_resampled.astype(int))
+    class0_count_after = resampled_class_counts[0] if len(resampled_class_counts) > 0 else 0
+    class1_count_after = resampled_class_counts[1] if len(resampled_class_counts) > 1 else 0
+    print(
+        f"undersampling 적용 후 클래스 분포: 거래중={class0_count_after}, 경영악화={class1_count_after}")
+
+    # DataFrame으로 변환
+    self.df_x_train = pd.DataFrame(X_resampled, columns=X_train_for_undersampling.columns)
+
+    # company_id가 있었다면, 유지된 샘플에 해당하는 company_id만 필터링하여 다시 추가
+    if company_ids_original is not None:
+        company_ids_resampled = company_ids_original[kept_indices]
+        self.df_x_train['company_id'] = company_ids_resampled
+        print(f"  유지된 샘플에 대해 'company_id'를 다시 할당했습니다. (총 {len(company_ids_resampled)}개)")
+
+    # y_train 업데이트 (원본 Series의 이름을 유지하도록 시도)
+    y_series_name = y_train_for_undersampling.name if hasattr(y_train_for_undersampling,
+                                                    'name') and y_train_for_undersampling.name is not None else 'label'
+    # self.df_x_train의 인덱스를 사용하여 Series 생성
+    self.df_y_train = pd.Series(y_resampled, name=y_series_name, index=self.df_x_train.index)
+
+    new_total_samples = len(y_resampled)
+    removed_samples_count = orig_total_samples - new_total_samples
+
+    print(f"undersampling 적용 완료: 원본 {orig_total_samples}개 → 최종 {new_total_samples}개 샘플")
+    print(f"제거된 샘플 수: {removed_samples_count}개 샘플")
+    print("=== undersampling 완료 ===\n")
+
+
 def apply_SMOTE(self):
     print("\n=== SMOTE 오버샘플링 시작 ===")
     # SMOTE 적용 전 데이터 형태 확인
@@ -104,7 +182,14 @@ def apply_SMOTE(self):
     print(f"총 훈련 데이터: {len(y_train)}개 샘플")
 
     # SMOTE 적용
-    smote = SMOTESampler(random_state=self.config['random_state'])
+    if self.config['oversampling'] == 'BorderlineSMOTE':
+        smote = BorderlineSMOTE(k_neighbors=2, kind='borderline-1', random_state=self.config['random_state'], n_jobs=-1)
+    elif self.config['oversampling'] == 'SMOTE':
+        smote = SMOTESampler(k_neighbors=self.config['SMOTE_k_neighbors'],
+                             sampling_strategy=self.config['SMOTE_k_neighbors'],
+                             random_state=self.config['random_state'])
+    else:
+        return 1
     X_resampled, y_resampled = smote.fit_resample(X_train, y_train)
 
     # 결과 클래스 분포 확인

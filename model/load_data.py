@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+from normalize_data import *
 
 
 class Company:
@@ -125,6 +126,11 @@ def load_data(self):
                 )
                 new_cols = list(df_sheet.columns[:info_cols_count]) + list(converted_date_cols)
                 df_sheet.columns = new_cols
+
+            if self.config['scaler'] == 'None':
+                pass
+            elif self.config['scaler'] == 'standard':
+                df_sheet = standard_sclaer(self, sheet_name, df_sheet)
 
             if self.config['use_all_data'] == 'All':
                 for i, row in df_sheet.iterrows():
