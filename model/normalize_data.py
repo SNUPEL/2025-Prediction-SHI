@@ -3,7 +3,7 @@ import pandas as pd
 from sklearn.preprocessing import StandardScaler
 
 
-def standard_sclaer(self, sheet_name, df_sheet):
+def standard_scaler(self, sheet_name, df_sheet):
     df_scaled = df_sheet.copy()
     df_train_valid = df_sheet.iloc[:, 9:df_sheet.columns.get_loc(self.split_cutoff_date)].copy()
     all_non_zero_values_list = []

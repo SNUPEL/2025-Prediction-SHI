@@ -29,8 +29,8 @@ def objective(self, trial):
 
     # company_id 제외하고 X 데이터 준비
     # errors='ignore'는 company_id가 없을 경우 에러를 무시합니다.
-    X = self.data.df_x_train.drop(columns=["company_id"], errors='ignore')
-    y = self.data.df_y_train
+    X = self.data.X_train.drop(columns=["company_id"], errors='ignore')
+    y = self.data.y_train
 
     # 교차 검증 설정 (StratifiedKFold는 불균형 데이터에 적합)
     cv = StratifiedKFold(n_splits=3, shuffle=True, random_state=self.config.get('random_state', 42))
@@ -107,18 +107,18 @@ def get_AdaBoostClassifier_optimized(self):  # 함수 이름을 변경하거나 
 
     print("\n최적 파라미터로 전체 훈련 데이터에 모델 재학습 중...")
     # 전체 훈련 데이터로 최종 모델 학습
-    X_train_final = self.data.df_x_train.drop(columns=["company_id"], errors='ignore')
-    y_train_final = self.data.df_y_train
+    X_train_final = self.data.X_train.drop(columns=["company_id"], errors='ignore')
+    y_train_final = self.data.y_train
     self.model.fit(X_train_final, y_train_final)
     print("모델 재학습 완료.")
 
     # 테스트 데이터로 예측 (기존 코드와 동일)
-    X_test_final = self.data.df_x_test.drop(columns=["company_id"], errors='ignore')
-    self.data.df_y_pred = pd.Series(
+    X_test_final = self.data.X_test.drop(columns=["company_id"], errors='ignore')
+    self.data.y_pred = pd.Series(
         self.model.predict(X_test_final),
-        index=self.data.df_y_test.index,
-        name=self.data.df_y_test.name if hasattr(self.data.df_y_test,
-                                                 'name') and self.data.df_y_test.name is not None else 'label'
+        index=self.data.y_test.index,
+        name=self.data.y_test.name if hasattr(self.data.y_test,
+                                                 'name') and self.data.y_test.name is not None else 'label'
     )
 
     self.models_hyperparameters = self.model.get_params()

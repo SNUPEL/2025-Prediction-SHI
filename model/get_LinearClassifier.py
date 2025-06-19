@@ -8,10 +8,10 @@ def get_RidgeClassifier(self):
         random_state=self.config['random_state']
     )
 
-    self.model.fit(self.data.df_x_train.drop(columns=["company_id"]), self.data.df_y_train)
-    self.data.df_y_pred = pd.Series(
-        self.model.predict(self.data.df_x_test.drop(columns=["company_id"])),
-        index=self.data.df_y_test.index,
+    self.model.fit(self.data.X_train.drop(columns=["company_id"]), self.data.y_train)
+    self.data.y_pred = pd.Series(
+        self.model.predict(self.data.X_test.drop(columns=["company_id"])),
+        index=self.data.y_test.index,
         name='label'
     )
 
@@ -26,10 +26,10 @@ def get_SGDClassifier(self):
         random_state=self.config['random_state']
     )
 
-    self.model.fit(self.data.df_x_train.drop(columns=["company_id"]), self.data.df_y_train)
-    self.data.df_y_pred = pd.Series(
-        self.model.predict(self.data.df_x_test.drop(columns=["company_id"])),
-        index=self.data.df_y_test.index,
+    self.model.fit(self.data.X_train.drop(columns=["company_id"]), self.data.y_train)
+    self.data.y_pred = pd.Series(
+        self.model.predict(self.data.X_test.drop(columns=["company_id"])),
+        index=self.data.y_test.index,
         name='label'
     )
 

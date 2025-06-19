@@ -26,12 +26,12 @@ def create_config():
 
     # 각 데이터 포인트의 과거 데이터 기간(길이) 설정
     # config['data_duration'] = 6
-    config['data_duration'] = 6
+    config['data_duration'] = 12
     # 테스트 예측 기간의 끝점을 정의하거나 load_data에서 회사 데이터 기간 제한에 사용되는 날짜
     # config['label_date'] = '2024-08-01'
-    config['label_date'] = '2024-04-01'
+    config['label_date'] = '2024-08-01'
     # 데이터 기간 끝 ~ 레이블 시점 간격 설정 (테스트 예측 기간 계산에도 사용)
-    config['label_duration'] = 3
+    config['label_duration'] = 1
 
     # 데이터 마스킹 기간 설정 (load_data에서 회사의 종료일 조정에 사용) 사용안함
     # config['data_masking_duration'] = 0
@@ -47,34 +47,38 @@ def create_config():
     # 정규화 기준: feature, feature_and_company
     config['scale_by'] = 'feature'
 
-    config['Flatten'] = True
+    # 데이터 분석 및 가시화 그래프를 저장, matrix시 불가능
+    config['save_graph'] = True
 
     config['test_data_ratio'] = 0.3  # 사용안함
 
     # 랜덤 시드 설정
     config['random_state'] = 42  # 랜덤 시드
 
-    # 데이터 분석 및 가시화 그래프를 저장
-    config['save_graph'] = True
-
-    # undersampling: None, tomek_link, ENN
+    # undersampling: None, tomek_link, ENN, nearmiss
     config['undersampling'] = 'ENN'
     config['ENN_n_neighbors'] = 5
 
     # SMOTE 오버샘플링 사용 여부 설정
     # SMOTE 사용시 경영 악화 데이터 증강으로 예측도 높아짐
-    config['oversampling'] = True
-    config['SMOTE_k_neighbors'] = 3
+    # oversampling: SMOTE, BorderlineSMOTE
+    config['oversampling'] = 'SMOTE'
+    config['SMOTE_k_neighbors'] = 5
     config['SMOTE_sampling_strategy'] = 1
 
-    # model: 'RandomForestClassifier', 'AdaBoostClassifier', 'ExtraTreesClassifier',
-    # 'RidgeClassifier', 'SGDClassifier', 'XGBClassifier', 'SVC'
-    config['model_type'] = 'AdaBoostClassifier'  # 사용할 모델 타입
+    # ML model: 'RandomForestClassifier', 'AdaBoostClassifier', 'ExtraTreesClassifier',
+    # 'RidgeClassifier', 'SGDClassifier', 'XGBClassifier', 'SVC',
+    # DL model: 'ConvLSTM'
+    config['model_type'] = 'ConvLSTM'  # 사용할 모델 타입
+
+    # flatten, matrix
+    config['data_shape'] = 'matrix'
+    config['sub_window_size'] = 3
 
     # model parameter:
-    config['AdaBoost_parameter'] = {'n_estimators': 100, "learning_rate": 0.01}
+    config['AdaBoost_parameter'] = {'n_estimators': 10, "learning_rate": 0.01}
     # config['AdaBoost_estimator_parameter'] = {'max_depth': 4, 'min_samples_split': 2}
-    config['class_weight'] = {0: 1, 1: 10}
+    config['class_weight'] = {0: 1, 1: 10000}
     # 학습된 모델 저장 여부 설정
     config['save_model'] = False
 

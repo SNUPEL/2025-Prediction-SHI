@@ -7,18 +7,45 @@ import numpy as np
 
 
 def save_PCA_LDA(self, graph_name):
-    x_train = self.df_x_train.drop(columns=["company_id"]).copy()
-    x_test = self.df_x_test.drop(columns=["company_id"]).copy()
-    x_train['set'] = 'train'
-    x_test['set'] = 'test'
-    x_train['label'] = self.df_y_train
-    x_test['label'] = self.df_y_test
-    combined_df = pd.concat([x_train, x_test], ignore_index=True)
-    plot_info = combined_df[['set', 'label']]
-    features = combined_df.drop(columns=['set', 'label'])
+    # 훈련 데이터 처리: 3D (matrix) -> 2D 평탄화, 2D (flatten)는 그대로 사용
+    if self.X_train.ndim > 2:
+        x_train_processed = self.X_train.reshape(self.X_train.shape[0], -1)
+    else:
+        x_train_processed = self.X_train
+
+    # 테스트 데이터 처리: 3D (matrix) -> 2D 평탄화, 2D (flatten)는 그대로 사용
+    if self.X_test.ndim > 2:
+        x_test_processed = self.X_test.reshape(self.X_test.shape[0], -1)
+    else:
+        x_test_processed = self.X_test
+
+    # 특징 데이터프레임 생성
+    # 컬럼 이름은 기본 정수 인덱스로 생성되며, 이는 PCA/LDA에 문제 없음
+    df_x_train = pd.DataFrame(x_train_processed)
+    df_x_test = pd.DataFrame(x_test_processed)
+
+    # set 및 label 컬럼 추가
+    df_x_train['set'] = 'train'
+    df_x_test['set'] = 'test'
+    df_x_train['label'] = self.y_train  # NumPy 배열 그대로 할당
+    df_x_test['label'] = self.y_test  # NumPy 배열 그대로 할당
+
+    # company_id 컬럼 추가 (name_train/test 리스트 활용)
+    df_x_train['company_id'] = self.name_train
+    df_x_test['company_id'] = self.name_test
+
+    # 훈련 및 테스트 데이터프레임 결합
+    combined_df = pd.concat([df_x_train, df_x_test], ignore_index=True)
+
+    # company_id, set, label 컬럼 분리
+    # company_id 컬럼을 유지하여 나중에 특정 샘플을 추적할 수 있도록 함
+    plot_info = combined_df[['company_id', 'set', 'label']].copy()
+    features = combined_df.drop(columns=['company_id', 'set', 'label'])
+
+    # NaN 값 0으로 채우기
     features = features.fillna(0)
 
-    # 3. PCA 적용 (3차원으로 축소)
+    # # 3. PCA 적용 (3차원으로 축소)
     print("PCA 적용하여 3차원으로 축소 중...")
     pca = PCA(n_components=3)
     principal_components = pca.fit_transform(features)
@@ -122,39 +149,37 @@ def save_PCA_LDA(self, graph_name):
     plt.show()
     print("테스트 데이터 전용 시각화 그래프가 'data_distribution_pca_test_only.png' 파일로 저장되었습니다.")
 
-    x_train_scaled = self.df_x_train.drop(columns=["company_id"]).copy().fillna(0)
-    x_test_scaled = self.df_x_test.drop(columns=["company_id"]).copy().fillna(0)
-    y_train = self.df_y_train
-    y_test = self.df_y_test
+    x_train_scaled_lda = x_train_processed
+    x_test_scaled_lda = x_test_processed
+    y_train_lda = self.y_train
+    y_test_lda = self.y_test
 
-    # 3. LDA 적용
     print("LDA 적용하여 1차원으로 축소 중...")
     lda = LDA(n_components=1)
 
-    # 중요: 훈련 데이터로만 LDA 모델을 학습(fit)합니다.
-    lda.fit(x_train_scaled, y_train)
+    lda.fit(x_train_scaled_lda, y_train_lda)
 
-    # 학습된 LDA로 훈련 데이터와 테스트 데이터를 모두 변환(transform)합니다.
-    lda_train = lda.transform(x_train_scaled)
-    lda_test = lda.transform(x_test_scaled)
+    lda_train = lda.transform(x_train_scaled_lda)
+    lda_test = lda.transform(x_test_scaled_lda)
 
-    # 4. 시각화를 위한 최종 데이터프레임 생성
+    # 6. LDA 시각화를 위한 최종 데이터프레임 생성
     df_train_lda = pd.DataFrame(data=lda_train, columns=['LD1'])
     df_train_lda['set'] = 'train'
-    df_train_lda['label'] = y_train.values
+    df_train_lda['label'] = y_train_lda.astype(bool)  # label을 bool로 변환
 
     df_test_lda = pd.DataFrame(data=lda_test, columns=['LD1'])
     df_test_lda['set'] = 'test'
-    df_test_lda['label'] = y_test.values
+    df_test_lda['label'] = y_test_lda.astype(bool)  # label을 bool로 변환
 
-    final_plot_df = pd.concat([df_train_lda, df_test_lda], ignore_index=True)
+    final_plot_df_lda = pd.concat([df_train_lda, df_test_lda], ignore_index=True)
 
-    # 5. 1D 시각화 (스트립 플롯)
+    # 7. 1D LDA 시각화 (스트립 플롯)
     print("1D 스트립 플롯 생성 중...")
     plt.figure(figsize=(15, 10))
 
-    final_plot_df['group'] = final_plot_df['set'] + '_' + final_plot_df['label'].astype(str)
-    colors = {
+    # label을 bool로 변환했으므로 .astype(str) 시 'False'/'True' 문자열이 됨
+    final_plot_df_lda['group'] = final_plot_df_lda['set'] + '_' + final_plot_df_lda['label'].astype(str)
+    colors_lda = {  # 색상 변수 이름을 다른 시각화와 구분
         'train_False': 'lightgray',
         'train_True': 'deepskyblue',
         'test_False': 'dimgray',
@@ -162,9 +187,9 @@ def save_PCA_LDA(self, graph_name):
     }
 
     sns.stripplot(
-        x='LD1', y='group', data=final_plot_df,
-        hue='group', palette=colors, jitter=0.3, size=6, alpha=0.7,
-        order=['train_False', 'train_True', 'test_False', 'test_True'],
+        x='LD1', y='group', data=final_plot_df_lda,
+        hue='group', palette=colors_lda, jitter=0.3, size=6, alpha=0.8,
+        order=['train_False', 'train_True', 'test_False', 'test_True'],  # order도 'False', 'True'로 통일
         legend=False
     )
 
@@ -172,21 +197,20 @@ def save_PCA_LDA(self, graph_name):
     plt.xlabel('Linear Discriminant 1 (LD1)', fontsize=12)
     plt.ylabel('Group', fontsize=12)
     plt.grid(axis='x')
-    from matplotlib.lines import Line2D
-    # PCA 플롯에서 사용한 것과 동일한 방식으로, 각 그룹에 대한 범례 요소를 만듭니다.
-    legend_elements = [
+
+    # 범례 생성
+    legend_elements_lda = [
         Line2D([0], [0], marker='o', color='w', label='Train, False',
-               markerfacecolor=colors['train_False'], markersize=8),
+               markerfacecolor=colors_lda['train_False'], markersize=8),
         Line2D([0], [0], marker='o', color='w', label='Train, True',
-               markerfacecolor=colors['train_True'], markersize=8),
+               markerfacecolor=colors_lda['train_True'], markersize=8),
         Line2D([0], [0], marker='o', color='w', label='Test, False',
-               markerfacecolor=colors['test_False'], markersize=8),
+               markerfacecolor=colors_lda['test_False'], markersize=8),
         Line2D([0], [0], marker='o', color='w', label='Test, True',
-               markerfacecolor=colors['test_True'], markersize=8)
+               markerfacecolor=colors_lda['test_True'], markersize=8)
     ]
 
-    # 수동으로 생성한 요소들을 사용하여 범례를 만듭니다.
-    plt.legend(handles=legend_elements, title='Group')
+    plt.legend(handles=legend_elements_lda, title='Group')
 
     plt.savefig(self.config['result_folder_path'] + '/data_distribution_lda_' + graph_name + '.png')
     plt.show()

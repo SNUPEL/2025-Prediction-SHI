@@ -33,12 +33,6 @@ def load_data(self):
     info_cols_count = 8
     date_col_start_index = info_cols_count
 
-    # original_date_cols = df_temp.columns[date_col_start_index:]
-    #
-    # # converted_date_cols = pd.to_datetime(original_date_cols, errors='coerce').map(
-    # #     lambda dt: dt.replace(day=1) if pd.notna(dt) else dt  # NaT가 아니면 월초 날짜로 변환
-    # # )
-
     if pd.isna(pd.to_datetime(df_temp.columns[-1], errors='coerce')):
         df_temp = df_temp.iloc[:, :-1]
         original_date_cols = df_temp.columns[date_col_start_index:]
@@ -130,7 +124,7 @@ def load_data(self):
             if self.config['scaler'] == 'None':
                 pass
             elif self.config['scaler'] == 'standard':
-                df_sheet = standard_sclaer(self, sheet_name, df_sheet)
+                df_sheet = standard_scaler(self, sheet_name, df_sheet)
 
             if self.config['use_all_data'] == 'All':
                 for i, row in df_sheet.iterrows():
@@ -172,9 +166,9 @@ def load_data(self):
                             print(f"  !!! 데이터 추출/할당 중 오류 발생 (회사 ID {original_company_id_from_row}, 시트 {sheet_name}): {e} !!!")
 
             elif self.config['use_all_data'] == 'Padding':
-                pass  # 현진이가 한 방식인데 향후 수정 필요
+                pass
             else:
                 print(f"Error: config['use_all_data'] '{self.config['use_all_data']}' was not found.")
-                return False  # 함수 실행 중단
+                return False
 
     print('Data has been loaded successfully')

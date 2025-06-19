@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
-from imblearn.over_sampling import SMOTE as SMOTESampler
+from imblearn.over_sampling import SMOTE
 from imblearn.over_sampling import BorderlineSMOTE
 from imblearn.under_sampling import TomekLinks
 from imblearn.under_sampling import EditedNearestNeighbours
@@ -9,157 +9,172 @@ from imblearn.under_sampling import NearMiss
 
 
 def split_data(self):
-    rows_train = []  # 훈련 데이터의 행들을 저장할 리스트
-    rows_test = []  # 테스트 데이터의 행들을 저장할 리스트
+    temp_X_train, temp_y_train, temp_name_train = [], [], []
+    temp_X_test, temp_y_test, temp_name_test = [], [], []
 
-    # self.company_dict: load_data에서 채워진 회사 정보 딕셔너리
+    # 모든 회사에 공통으로 적용될 feature_names를 미리 정의 (한 번만)
+    # 실제 데이터에서 추출해야 함. 여기서는 첫 번째 회사를 예시로 사용
+    first_company_key = next(iter(self.company_dict))
+    feature_names = sorted(list(self.company_dict[first_company_key].data_dict.keys()))
+    num_features = len(feature_names)
+
     for company_id, company in self.company_dict.items():
         for date in company.date_range:
+            name = str(company_id) + '_' + str(date.date())
 
-            # 'company_id' 컬럼에 들어갈 식별자: 원본 회사 ID와 데이터 윈도우 시작 날짜 연결
-            name = str(company_id) + '_' + str(date.date())  # date.date()로 날짜 부분만 추출
-
-            # 이 데이터 포인트의 레이블(정답) 시점 계산
-            # label_date = 데이터 윈도우 시작 ('date') + 데이터 기간 ('data_duration') + 예측 기간 ('label_duration') 간격
             label_date = date + pd.DateOffset(months=self.config['data_duration'] - 1 + self.config['label_duration'])
 
-            # 계산된 label_date가 해당 회사의 데이터 유효 기간 마지막을 벗어나는지 확인
-            # load_data에서 company.date_range는 comparison_date(max self.label_date)까지로 제한됩니다.
-            # 계산된 label_date가 company.date_range의 마지막 날짜(가장 최근 데이터 시점)보다 미래이면,
-            # 해당 시점의 레이블(정답)을 알 수 없으므로 이 회사에 대한 더 이상의 데이터 포인트 생성을 중단합니다.
             if company.date_range and label_date > company.date_range[-1]:
-                break  # 이 회사에 대한 date 루프 종료
+                break
 
-            # 계산된 label_date를 기준으로 이 데이터 포인트의 레이블(True/False) 결정
-            # 이 로직은 기존과 동일하게 유지됩니다.
-            if company.label and company.end_date - pd.DateOffset(
-                    months=self.config['label_duration'] - 1) <= label_date <= company.end_date:
-                row = {"company_id": name, "label": True}  # True: 경영악화
-            else:
-                row = {"company_id": name, "label": False}  # False: 거래중 또는 다른 상태
+            # 레이블 결정 로직은 동일
+            label = True if company.label and company.end_date - pd.DateOffset(
+                months=self.config['label_duration'] - 1) <= label_date <= company.end_date else False
 
-            # 이 데이터 포인트에 사용될 특징 데이터의 시간 범위: 'date' (시작) ~ 'date + data_duration - 1 month' (끝)
-            window_start_date = date  # 특징 데이터 윈도우 시작 날짜
-            window_end_date = date + pd.DateOffset(months=self.config['data_duration'] - 1)  # 특징 데이터 윈도우 끝 날짜
+            window_start_date = date
+            window_end_date = date + pd.DateOffset(months=self.config['data_duration'] - 1)
 
-            if self.config['Flatten']:
-                # 각 시트별 데이터 추출 및 특징으로 평탄화
-                for sheet_name, full_series in company.data_dict.items():
-                    for i in range(self.config['data_duration']):
-                        # 윈도우 내 i번째 월에 해당하는 날짜 계산
-                        current_date_in_window = window_start_date + pd.DateOffset(months=i)
+            # 2. 특징 데이터를 항상 (data_duration, num_features) 매트릭스 형태로 생성
+            instance_features = np.zeros((self.config['data_duration'], num_features))
+            for i in range(self.config['data_duration']):
+                current_date_in_window = window_start_date + pd.DateOffset(months=i)
+                for j, feature_name in enumerate(feature_names):
+                    val = company.data_dict[feature_name].get(current_date_in_window, np.nan)
+                    instance_features[i, j] = val
 
-                        # 해당 날짜의 값을 full_series에서 가져오고, 없으면 np.nan
-                        val = full_series.get(current_date_in_window, np.nan)
-
-                        # row 딕셔너리에 특징 컬럼 이름과 값 할당
-                        row[f"{sheet_name}_{i}"] = val  # np.nan 값 그대로 할당 (나중에 fillna(0))
-            else:
-                pass
-
+            # 3. 통합된 오버랩 및 분할 로직 (temp_X_raw에 추가하기 전에 적용)
+            # 이 부분이 핵심. 모든 데이터는 matrix 형태로 생성된 후, 여기서 train/test로 분리됨.
             if date <= self.split_cutoff_date:
-                if self.config['overlap'] and date + pd.DateOffset(
-                        months=self.config['data_duration'] - 1) > self.split_cutoff_date:
+                # 'overlap'이 False이고 윈도우가 분할 기준을 넘어가는 경우, 훈련 세트에 포함시키지 않음
+                if not self.config.get('overlap', True) and window_end_date > self.split_cutoff_date:
                     continue
-                rows_train.append(row)
+                temp_X_train.append(instance_features)
+                temp_y_train.append(label)
+                temp_name_train.append(name)
             elif date > self.split_cutoff_date:
-                # 계산된 label_date가 분할 기준 날짜보다 이후이면 테스트 세트
-                rows_test.append(row)
+                temp_X_test.append(instance_features)
+                temp_y_test.append(label)
+                temp_name_test.append(name)
 
-            # # 분할 기준: 계산된 label_date와 self.split_cutoff_date 비교
-            # if label_date <= self.split_cutoff_date:
-            #     if label_date + pd.DateOffset(months=self.config['data_duration'] - 1) <= self.split_cutoff_date:
-            #         continue
-            #     # 계산된 label_date가 분할 기준 날짜보다 같거나 이전이면 훈련 세트
-            #     rows_train.append(row)
-            # elif label_date > self.split_cutoff_date:
-            #     # 계산된 label_date가 분할 기준 날짜보다 이후이면 테스트 세트
-            #     rows_test.append(row)
+    if self.config['data_shape'] == 'flatten':
+        # 매트릭스 형태의 데이터를 평탄화하여 2D NumPy 배열로 변환
+        flattened_X_train_list = []
+        flattened_X_test_list = []
 
-    # 리스트에 담긴 행들로 DataFrame 생성
-    self.df_train = pd.DataFrame(rows_train)
-    self.df_test = pd.DataFrame(rows_test)
+        # 훈련 데이터 평탄화
+        for matrix_data in temp_X_train:
+            # Matrix (data_duration, num_features)를 1D 배열로 평탄화
+            flattened_row = np.nan_to_num(matrix_data.flatten(), nan=0.0)
+            flattened_X_train_list.append(flattened_row)
 
-    # 특징 컬럼들(company_id, label 제외)에 대해 누락된 값(NaN)을 0으로 채우기
-    # 플래트닝 로직에서 np.nan으로 할당했으므로 여기서 채워줍니다.
-    feature_cols_train = [col for col in self.df_train.columns if col not in ['company_id', 'label']]
-    feature_cols_test = [col for col in self.df_test.columns if col not in ['company_id', 'label']]
+        # 테스트 데이터 평탄화
+        for matrix_data in temp_X_test:
+            flattened_row = np.nan_to_num(matrix_data.flatten(), nan=0.0)
+            flattened_X_test_list.append(flattened_row)
 
-    # 해당 컬럼들에 대해서만 fillna(0) 적용
-    self.df_train[feature_cols_train] = self.df_train[feature_cols_train].fillna(0)
-    self.df_test[feature_cols_test] = self.df_test[feature_cols_test].fillna(0)
+        # NumPy 배열로 최종 할당
+        self.X_train = np.array(flattened_X_train_list)
+        self.y_train = np.array(temp_y_train)
+        self.name_train = temp_name_train  # 이름 정보는 그대로 리스트로 유지
 
-    # 특징 데이터 (X)와 레이블 (y) 분리
-    self.df_x_train = self.df_train.drop(columns=['label'])
-    self.df_y_train = self.df_train['label']
-    self.df_x_test = self.df_test.drop(columns=['label'])
-    self.df_y_test = self.df_test['label']
-    # --- DataFrame 생성 및 최종 처리 끝 ---
+        self.X_test = np.array(flattened_X_test_list)
+        self.y_test = np.array(temp_y_test)
+        self.name_test = temp_name_test  # 이름 정보는 그대로 리스트로 유지
+
+        print("\n전통적인 머신러닝용 Flattened NumPy 배열이 생성되었습니다.")
+        print(f"훈련 데이터 X 형태: {self.X_train.shape}")
+        print(f"훈련 데이터 y 형태: {self.y_train.shape}")
+        print(f"테스트 데이터 X 형태: {self.X_test.shape}")
+        print(f"테스트 데이터 y 형태: {self.y_test.shape}")
+
+    elif self.config['data_shape'] == 'matrix':
+        # Matrix 형태 데이터를 NumPy 배열로 변환하고 NaN 처리
+        self.X_train = np.nan_to_num(np.array(temp_X_train), nan=0.0)
+        self.y_train = np.array(temp_y_train)
+        self.name_train = temp_name_train
+
+        self.X_test = np.nan_to_num(np.array(temp_X_test), nan=0.0)
+        self.y_test = np.array(temp_y_test)
+        self.name_test = temp_name_test
+
+        print("\n딥러닝용 Matrix(Tensor) 생성이 완료되었습니다.")
+        print(f"훈련 데이터 X 형태: {self.X_train.shape}")
+        print(f"훈련 데이터 y 형태: {self.y_train.shape}")
+        print(f"테스트 데이터 X 형태: {self.X_test.shape}")
+        print(f"테스트 데이터 y 형태: {self.y_test.shape}")
+
+    print("=== 데이터 분할 작업 완료 ===")
 
 
-def apply_undersampling(self):
+def apply_undersampling(self):  # 이 함수는 DataLoader 클래스(Data 클래스)의 메서드
     print("\n=== undersampling 시작 ===")
 
-    # 원본 company_id 저장 및 X_train, y_train 준비
-    if 'company_id' in self.df_x_train.columns:
-        company_ids_original = self.df_x_train['company_id'].values
-        X_train_for_undersampling = self.df_x_train.drop(columns=["company_id"])
-        print("  'company_id' 컬럼을 ID로 분리했습니다.")
-    else:
-        company_ids_original = None
-        X_train_for_undersampling = self.df_x_train.copy()
-        print("  'company_id' 컬럼이 없어 피처만 사용합니다.")
+    # self.X_train은 NumPy 배열, self.y_train은 NumPy 배열, self.name_train은 리스트
+    X_input = self.X_train  # 샘플링 함수에 전달할 X
+    y_input = self.y_train  # 샘플링 함수에 전달할 y
+    name_input = self.name_train  # 샘플링 후 company_id를 업데이트할 리스트
 
-    y_train_for_undersampling = self.df_y_train.copy()
+    # Imblearn 샘플러는 2D 입력 (n_samples, n_features)를 기대합니다.
+    # self.X_train.ndim을 직접 사용하여 차원 확인
+    if self.X_train.ndim > 2:
+        num_samples_original = self.X_train.shape[0]
+        # 3D -> 2D 평탄화 (n_samples, data_duration * num_features)
+        X_input_reshaped_for_sampler = self.X_train.reshape(num_samples_original, -1)
+        print(f"  X_train이 {self.X_train.ndim}D이므로 샘플링을 위해 2D로 평탄화했습니다: {X_input_reshaped_for_sampler.shape}")
+    else:
+        # 2D (flatten)인 경우 그대로 사용
+        X_input_reshaped_for_sampler = self.X_train
+        print(f"  X_train이 2D이므로 샘플링을 위해 그대로 사용합니다: {X_input_reshaped_for_sampler.shape}")
 
     # 클래스 불균형 확인
-    class_counts_before = np.bincount(y_train_for_undersampling.astype(int))
+    class_counts_before = np.bincount(y_input.astype(int))
     print(
-        f"undersampling 적용 전 클래스 분포: 거래중={class_counts_before[0]}, 경영악화={class_counts_before[1] if len(class_counts_before) > 1 else 0}")
-    orig_total_samples = len(y_train_for_undersampling)
-    print(f"총 훈련 데이터: {orig_total_samples}개 샘플")
+        f"  undersampling 적용 전 클래스 분포: 거래중={class_counts_before[0]}, 경영악화={class_counts_before[1] if len(class_counts_before) > 1 else 0}")
+    orig_total_samples = len(y_input)
+    print(f"  총 훈련 데이터: {orig_total_samples}개 샘플")
 
     if self.config['undersampling'] == 'ENN':
-        # Edited Nearest Neighbours (ENN) 적용
-        # n_neighbors: 확인하는 이웃 수
         sampler = EditedNearestNeighbours(sampling_strategy='auto', n_neighbors=self.config['ENN_n_neighbors'],
                                           kind_sel='all', n_jobs=-1)
     elif self.config['undersampling'] == 'tomek_link':
         sampler = TomekLinks(sampling_strategy='auto', n_jobs=-1)
-    elif self.config['undersampling'] == 'nearmiss':  # 이 부분만 추가하면 끝!
+    elif self.config['undersampling'] == 'nearmiss':
         sampler = NearMiss(version=1, n_jobs=-1)
     else:
-        return 1
-    X_input = X_train_for_undersampling.to_numpy() if isinstance(X_train_for_undersampling,
-                                                                 pd.DataFrame) else X_train_for_undersampling
-    y_input = y_train_for_undersampling.to_numpy() if isinstance(y_train_for_undersampling,
-                                                                 pd.Series) else y_train_for_undersampling
+        print(f"  오류: 지원되지 않는 undersampling 방법 '{self.config['undersampling']}'입니다.")
+        return  # 함수 종료
 
-    X_resampled, y_resampled = sampler.fit_resample(X_input, y_input)
-    # 선택된(유지된) 샘플의 원본 인덱스를 가져옵니다.
-    kept_indices = sampler.sample_indices_
+    X_resampled_2d, y_resampled = sampler.fit_resample(X_input_reshaped_for_sampler, y_input)
 
     # 결과 클래스 분포 확인
     resampled_class_counts = np.bincount(y_resampled.astype(int))
     class0_count_after = resampled_class_counts[0] if len(resampled_class_counts) > 0 else 0
     class1_count_after = resampled_class_counts[1] if len(resampled_class_counts) > 1 else 0
-    print(
-        f"undersampling 적용 후 클래스 분포: 거래중={class0_count_after}, 경영악화={class1_count_after}")
+    print(f"  undersampling 적용 후 클래스 분포: 거래중={class0_count_after}, 경영악화={class1_count_after}")
 
-    # DataFrame으로 변환
-    self.df_x_train = pd.DataFrame(X_resampled, columns=X_train_for_undersampling.columns)
+    # self.X_train 업데이트 (원래의 차원으로 복원)
+    # self.X_train.ndim을 직접 사용하여 차원 확인
+    if self.X_train.ndim > 2:
+        # 2D -> 3D 복원 (n_samples, data_duration, num_features)
+        original_matrix_shape = self.X_train.shape[1:]  # 원본 shape의 나머지 차원 (tuple)
+        self.X_train = X_resampled_2d.reshape(-1, *original_matrix_shape)
+    else:
+        self.X_train = X_resampled_2d  # 2D인 경우 그대로 할당
 
-    # company_id가 있었다면, 유지된 샘플에 해당하는 company_id만 필터링하여 다시 추가
-    if company_ids_original is not None:
-        company_ids_resampled = company_ids_original[kept_indices]
-        self.df_x_train['company_id'] = company_ids_resampled
-        print(f"  유지된 샘플에 대해 'company_id'를 다시 할당했습니다. (총 {len(company_ids_resampled)}개)")
+    self.y_train = y_resampled  # y_train 업데이트
 
-    # y_train 업데이트 (원본 Series의 이름을 유지하도록 시도)
-    y_series_name = y_train_for_undersampling.name if hasattr(y_train_for_undersampling,
-                                                    'name') and y_train_for_undersampling.name is not None else 'label'
-    # self.df_x_train의 인덱스를 사용하여 Series 생성
-    self.df_y_train = pd.Series(y_resampled, name=y_series_name, index=self.df_x_train.index)
+    # name_train 업데이트: 유지된 샘플에 해당하는 name만 필터링
+    if hasattr(sampler, 'sample_indices_') and sampler.sample_indices_ is not None:
+        self.name_train = [name_input[idx] for idx in sampler.sample_indices_]
+        print(f"  유지된 샘플에 대해 'company_id' (name_train)를 필터링했습니다. (총 {len(self.name_train)}개)")
+    else:
+        # 샘플러가 sample_indices_를 제공하지 않거나 (예: NearMiss)
+        # 또는 일부 샘플러에서 sample_indices_가 None인 경우
+        if len(y_resampled) != len(name_input):
+            print(f"  경고: 샘플러가 인덱스를 명시적으로 제공하지 않아 name_train 필터링이 정확하지 않을 수 있습니다. y_resampled 길이에 맞춰 조정합니다.")
+            self.name_train = name_input[:len(y_resampled)]
+        else:
+            self.name_train = name_input
 
     new_total_samples = len(y_resampled)
     removed_samples_count = orig_total_samples - new_total_samples
@@ -169,61 +184,75 @@ def apply_undersampling(self):
     print("=== undersampling 완료 ===\n")
 
 
-def apply_SMOTE(self):
+def apply_SMOTE(self):  # 이 함수는 DataLoader 클래스(Data 클래스)의 메서드
     print("\n=== SMOTE 오버샘플링 시작 ===")
-    # SMOTE 적용 전 데이터 형태 확인
-    company_ids = self.df_x_train['company_id'].values
-    X_train = self.df_x_train.drop(columns=["company_id"])
-    y_train = self.df_y_train
+
+    X_input = self.X_train
+    y_input = self.y_train
+    name_input = self.name_train  # company_id 리스트
+
+    # Imblearn 샘플러는 2D 입력 (n_samples, n_features)를 기대합니다.
+    if self.X_train.ndim > 2:  # self.X_train.ndim을 직접 사용
+        num_samples_original = self.X_train.shape[0]
+        X_input_reshaped_for_sampler = self.X_train.reshape(num_samples_original, -1)
+        print(f"  X_train이 {self.X_train.ndim}D이므로 샘플링을 위해 2D로 평탄화했습니다: {X_input_reshaped_for_sampler.shape}")
+    else:
+        X_input_reshaped_for_sampler = self.X_train
+        print(f"  X_train이 2D이므로 샘플링을 위해 그대로 사용합니다: {X_input_reshaped_for_sampler.shape}")
 
     # 클래스 불균형 확인
-    class_counts = np.bincount(y_train.astype(int))
-    print(f"SMOTE 적용 전 클래스 분포: 거래중={class_counts[0]}, 경영악화={class_counts[1] if len(class_counts) > 1 else 0}")
-    print(f"총 훈련 데이터: {len(y_train)}개 샘플")
+    class_counts = np.bincount(y_input.astype(int))
+    print(f"  SMOTE 적용 전 클래스 분포: 거래중={class_counts[0]}, 경영악화={class_counts[1] if len(class_counts) > 1 else 0}")
+    orig_total_samples = len(y_input)
+    print(f"  총 훈련 데이터: {orig_total_samples}개 샘플")
 
     # SMOTE 적용
     if self.config['oversampling'] == 'BorderlineSMOTE':
-        smote = BorderlineSMOTE(k_neighbors=2, kind='borderline-1', random_state=self.config['random_state'], n_jobs=-1)
-    elif self.config['oversampling'] == 'SMOTE':
-        smote = SMOTESampler(k_neighbors=self.config['SMOTE_k_neighbors'],
-                             sampling_strategy=self.config['SMOTE_k_neighbors'],
-                             random_state=self.config['random_state'])
+        smote_sampler = BorderlineSMOTE(sampling_strategy='auto', k_neighbors=self.config.get('SMOTE_k_neighbors', 5),
+                                        kind='borderline-1', random_state=self.config['random_state'], n_jobs=-1)
+    elif self.config['oversampling'] == 'SMOTE':  # 일반 SMOTE
+        smote_sampler = SMOTE(sampling_strategy=self.config['SMOTE_sampling_strategy'], k_neighbors=self.config['SMOTE_k_neighbors'],
+                              random_state=self.config['random_state'], n_jobs=-1)
     else:
-        return 1
-    X_resampled, y_resampled = smote.fit_resample(X_train, y_train)
+        print(f"  오류: 지원되지 않는 oversampling 방법 '{self.config['oversampling']}'입니다.")
+        return  # 함수 종료
+
+    X_resampled_2d, y_resampled = smote_sampler.fit_resample(X_input_reshaped_for_sampler, y_input)
 
     # 결과 클래스 분포 확인
     resampled_class_counts = np.bincount(y_resampled.astype(int))
-    print(f"SMOTE 적용 후 클래스 분포: 거래중={resampled_class_counts[0]}, 경영악화={resampled_class_counts[1]}")
+    class0_count_after = resampled_class_counts[0] if len(resampled_class_counts) > 0 else 0
+    class1_count_after = resampled_class_counts[1] if len(resampled_class_counts) > 1 else 0
+    print(f"  SMOTE 적용 후 클래스 분포: 거래중={class0_count_after}, 경영악화={class1_count_after}")
 
-    # company_id 다시 추가 (원래 있던 id를 복제)
-    # 원본 데이터 수
-    orig_count = len(y_train)
-    # 리샘플링 후 추가된 수
-    new_count = len(y_resampled) - orig_count
-
-    # 원본 company_id를 유지하고, 추가 데이터에는 기존 company_id 중 경영악화(label=1) 데이터의 id를 복제
-    synthetic_ids = []
-    minority_ids = company_ids[y_train == 1]
-
-    if len(minority_ids) > 0:
-        # 소수 클래스의 id를 랜덤하게 선택하여 복제
-        synthetic_ids = np.random.choice(minority_ids, size=new_count, replace=True)
-        print(f"경영악화 기업 ID 개수: {len(minority_ids)}개")
+    # self.X_train 업데이트 (원래의 차원으로 복원)
+    if self.X_train.ndim > 2:  # self.X_train.ndim을 직접 사용
+        original_matrix_shape = self.X_train.shape[1:]
+        self.X_train = X_resampled_2d.reshape(-1, *original_matrix_shape)
     else:
-        # 소수 클래스가 없는 경우, 기존 id에서 랜덤 선택
-        synthetic_ids = np.random.choice(company_ids, size=new_count, replace=True)
-        print("경영악화 기업이 없어 랜덤하게 ID 생성")
+        self.X_train = X_resampled_2d  # 2D인 경우 그대로 할당
+
+    self.y_train = y_resampled  # y_train 업데이트
+
+    # name_train 업데이트: 합성된 샘플에 대한 company_id 생성
+    new_count = len(y_resampled) - orig_total_samples  # 추가된 샘플 수
+
+    # 원본 name_input에 추가될 합성 ID를 생성
+    synthetic_names = []
+    minority_names = [name_input[i] for i, label in enumerate(y_input) if label == 1]
+
+    if len(minority_names) > 0:
+        synthetic_names_array = np.random.choice(np.array(minority_names), size=new_count, replace=True)
+        synthetic_names = synthetic_names_array.tolist()
+        print(f"  경영악화 기업 ID 개수 (원본 소수 클래스): {len(minority_names)}개")
+    else:
+        print("  경고: 소수 클래스(경영악화)가 없어 SMOTE가 작동하지 않습니다. 합성 ID를 생성하지 않습니다.")
+        synthetic_names = []  # 합성 ID를 만들지 않음
 
     # id 결합
-    all_ids = np.concatenate([company_ids, synthetic_ids])
+    self.name_train = name_input + synthetic_names
 
-    # DataFrame으로 변환하고 company_id 추가
-    self.df_x_train = pd.DataFrame(X_resampled, columns=X_train.columns)
-    self.df_x_train['company_id'] = all_ids
-    self.df_y_train = pd.Series(y_resampled, name='label')
-
-    print(f"SMOTE 적용 완료: {orig_count}개 → {len(y_resampled)}개 샘플")
+    print(f"SMOTE 적용 완료: 원본 {orig_total_samples}개 → 최종 {len(y_resampled)}개 샘플")
     print(f"합성 데이터 생성: {new_count}개 샘플")
     print("=== SMOTE 오버샘플링 완료 ===\n")
 
@@ -232,7 +261,7 @@ def random_split(self):
     self.df_x = self.df_model.drop(columns=['label'])
     self.df_y = self.df_model['label']
 
-    self.df_x_train, self.df_x_test, self.df_y_train, self.df_y_test = train_test_split(
+    self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(
         self.df_x, self.df_y, test_size=self.config['test_data_ratio'], random_state=self.config['random_state'])
 
 
