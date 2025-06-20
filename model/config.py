@@ -9,26 +9,23 @@ def create_config():
     config = dict()
 
     # 데이터 파일 및 보조 파일 경로 설정
-    config['data_file_path'] = '../data/사내협력사 현황(철수사&거래 협력사)_ Data_추가(250417)_예진.xlsx'
+    config['data_file_path'] = '../data/사내협력사 현황(철수사&거래 협력사)_ Data_추가(250417)_데이터추가.xlsx'
     config['sub_data_file_path'] = '../data/사내협력사 현황(철수사&거래 협력사)_출근인력(추가).xlsx'
     # 데이터 로딩 방식 설정 (All: 당사 투입일 ~ 당사 철수일, Padding: 모든 기간)
     config['use_all_data'] = 'All'
     # 데이터 사용의 가장 이른 시작 시점 설정
     config['data_start_date'] = '2016-02-01'
-    # config['data_start_date'] = '2020-01-01'
-    # config['data_end_date'] = '2024-10-01' # 현재 코드 로직에서 사용되지 않는 설정 (원본 코드 유지)
+
+    ### 현재 data_duration, label_date, label_duration 등을 변경하려면 같은 개월 수 만큼 split_cutooff_date를 변경해야 함
 
     # 데이터 포인트의 계산된 label_date가 이 날짜보다 같거나 이전이면 훈련 세트, 이후이면 테스트 세트
     # 일반적으로 config['label_date']보다 이전 날짜로 설정(label_duration 및 데이터 마스킹 기간까지 고려하여 설정)
-    # config['split_cutoff_date'] = '2023-07-01'  # 굉장히 넉넉히 줄 것
     config['split_cutoff_date'] = '2023-03-01'  # 굉장히 넉넉히 줄 것
     config['overlap'] = False
 
     # 각 데이터 포인트의 과거 데이터 기간(길이) 설정
-    # config['data_duration'] = 6
     config['data_duration'] = 12
     # 테스트 예측 기간의 끝점을 정의하거나 load_data에서 회사 데이터 기간 제한에 사용되는 날짜
-    # config['label_date'] = '2024-08-01'
     config['label_date'] = '2024-08-01'
     # 데이터 기간 끝 ~ 레이블 시점 간격 설정 (테스트 예측 기간 계산에도 사용)
     config['label_duration'] = 1
@@ -69,10 +66,10 @@ def create_config():
     # ML model: 'RandomForestClassifier', 'AdaBoostClassifier', 'ExtraTreesClassifier',
     # 'RidgeClassifier', 'SGDClassifier', 'XGBClassifier', 'SVC',
     # DL model: 'ConvLSTM'
-    config['model_type'] = 'ConvLSTM'  # 사용할 모델 타입
+    config['model_type'] = 'AdaBoostClassifier'  # 사용할 모델 타입
 
     # flatten, matrix
-    config['data_shape'] = 'matrix'
+    config['data_shape'] = 'flatten'
     config['sub_window_size'] = 3
 
     # model parameter:

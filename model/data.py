@@ -25,11 +25,6 @@ class Data:
         self.X_test = list()
         self.y_test = list()
         self.y_pred = list()
-        # self.df_x_train = pd.DataFrame()
-        # self.df_y_train = pd.DataFrame()
-        # self.df_x_test = pd.DataFrame()
-        # self.df_y_test = pd.DataFrame()
-        # self.df_y_pred = pd.DataFrame()
 
         self.scaler_dict = dict()
 
@@ -37,29 +32,27 @@ class Data:
         load_data(self)
 
     def preprocess_data(self):
+        print("==== 데이터 분할 시작 ====")
         split_data(self)
-        # 분할 방식에 대한 메시지 출력 수정
-        print('Data has been split successfully using standard chronological split')
+        print("==== 데이터 분할 완료 =====\n")
 
+        print("\n==== 데이터 분할 후 PCA, LDA 분석 시작 ===")
         if self.config['save_graph']:
             save_PCA_LDA(self, graph_name='after_split')
+        print("==== 데이터 분할 후 PCA, LDA 분석 완료 =====\n")
 
-        # # flatten 함수 호출
-        # if self.config['Flatten']:
-        #     flatten(self)
-        # else:
-        #     pass
-
+        print("\n==== 데이터 undersampling 적용 시작 ====")
         if self.config['undersampling']:
             apply_undersampling(self)
-        else:
-            pass
+        print("==== 데이터 undersampling 적용 완료 =====\n")
 
-        # SMOTE 오버샘플링 적용
+        print("\n==== 데이터 oversampling 적용 시작 ====")
         if self.config['oversampling']:
             apply_SMOTE(self)
-        else:
-            pass
+        print("==== 데이터 oversampling 적용 완료 =====\n")
 
+        print("\n==== 데이터 증강 후 PCA, LDA 분석 시작 ====")
         if self.config['save_graph']:
             save_PCA_LDA(self, graph_name='after_under_oversampling')
+        print("==== 데이터 증강 후 PCA, LDA 분석 완료 =====\n")
+

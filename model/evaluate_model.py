@@ -57,7 +57,6 @@ def evaluate_classifier(self):
         print(f"틀린 예측: {self.result['wrong_count']}개 ({self.result['wrong_count']/self.result['total_count']:.2%})")
 
         print("\n----- 클래스별 성능 -----")
-        # 경영악화(1) 클래스 먼저 출력
         print(f"경영악화(1) 클래스: {self.result['class_1_total']}개 중 {self.result['class_1_correct']}개 맞춤 ({self.result['class_1_accuracy']:.2%})")
         print(f"거래중(0) 클래스: {self.result['class_0_total']}개 중 {self.result['class_0_correct']}개 맞춤 ({self.result['class_0_accuracy']:.2%})")
 
@@ -80,7 +79,7 @@ def evaluate_classifier(self):
 
         ax.set_xlabel('예측', fontsize=12, fontweight='bold')
         ax.set_ylabel('실제', fontsize=12, fontweight='bold')
-        ax.set_title(f'{self.config["model_type"]} 혼동 행렬 (경영악화 우선)', fontsize=14, fontweight='bold') # 제목 변경
+        ax.set_title(f'{self.config["model_type"]} 혼동 행렬', fontsize=14, fontweight='bold')
 
         for _, spine in ax.spines.items():
             spine.set_visible(True)

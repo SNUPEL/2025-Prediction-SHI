@@ -75,13 +75,13 @@ def split_data(self):
         # NumPy 배열로 최종 할당
         self.X_train = np.array(flattened_X_train_list)
         self.y_train = np.array(temp_y_train)
-        self.name_train = temp_name_train  # 이름 정보는 그대로 리스트로 유지
+        self.name_train = temp_name_train
 
         self.X_test = np.array(flattened_X_test_list)
         self.y_test = np.array(temp_y_test)
-        self.name_test = temp_name_test  # 이름 정보는 그대로 리스트로 유지
+        self.name_test = temp_name_test
 
-        print("\n전통적인 머신러닝용 Flattened NumPy 배열이 생성되었습니다.")
+        print("머신러닝용 Flattened NumPy 배열 생성 완료.")
         print(f"훈련 데이터 X 형태: {self.X_train.shape}")
         print(f"훈련 데이터 y 형태: {self.y_train.shape}")
         print(f"테스트 데이터 X 형태: {self.X_test.shape}")
@@ -97,34 +97,25 @@ def split_data(self):
         self.y_test = np.array(temp_y_test)
         self.name_test = temp_name_test
 
-        print("\n딥러닝용 Matrix(Tensor) 생성이 완료되었습니다.")
+        print("\n딥러닝용 Matrix(Tensor) 생성 완료.")
         print(f"훈련 데이터 X 형태: {self.X_train.shape}")
         print(f"훈련 데이터 y 형태: {self.y_train.shape}")
         print(f"테스트 데이터 X 형태: {self.X_test.shape}")
         print(f"테스트 데이터 y 형태: {self.y_test.shape}")
 
-    print("=== 데이터 분할 작업 완료 ===")
 
+def apply_undersampling(self):
+    y_input = self.y_train
+    name_input = self.name_train
 
-def apply_undersampling(self):  # 이 함수는 DataLoader 클래스(Data 클래스)의 메서드
-    print("\n=== undersampling 시작 ===")
-
-    # self.X_train은 NumPy 배열, self.y_train은 NumPy 배열, self.name_train은 리스트
-    X_input = self.X_train  # 샘플링 함수에 전달할 X
-    y_input = self.y_train  # 샘플링 함수에 전달할 y
-    name_input = self.name_train  # 샘플링 후 company_id를 업데이트할 리스트
-
-    # Imblearn 샘플러는 2D 입력 (n_samples, n_features)를 기대합니다.
-    # self.X_train.ndim을 직접 사용하여 차원 확인
+    # 3D -> 2D 평탄화 (n_samples, data_duration * num_features)
     if self.X_train.ndim > 2:
         num_samples_original = self.X_train.shape[0]
-        # 3D -> 2D 평탄화 (n_samples, data_duration * num_features)
         X_input_reshaped_for_sampler = self.X_train.reshape(num_samples_original, -1)
-        print(f"  X_train이 {self.X_train.ndim}D이므로 샘플링을 위해 2D로 평탄화했습니다: {X_input_reshaped_for_sampler.shape}")
+        print(f"  샘플링을 위한 X_train 변환 결과: {X_input_reshaped_for_sampler.shape}")
     else:
         # 2D (flatten)인 경우 그대로 사용
         X_input_reshaped_for_sampler = self.X_train
-        print(f"  X_train이 2D이므로 샘플링을 위해 그대로 사용합니다: {X_input_reshaped_for_sampler.shape}")
 
     # 클래스 불균형 확인
     class_counts_before = np.bincount(y_input.astype(int))
@@ -142,7 +133,7 @@ def apply_undersampling(self):  # 이 함수는 DataLoader 클래스(Data 클래
         sampler = NearMiss(version=1, n_jobs=-1)
     else:
         print(f"  오류: 지원되지 않는 undersampling 방법 '{self.config['undersampling']}'입니다.")
-        return  # 함수 종료
+        return
 
     X_resampled_2d, y_resampled = sampler.fit_resample(X_input_reshaped_for_sampler, y_input)
 
@@ -152,26 +143,19 @@ def apply_undersampling(self):  # 이 함수는 DataLoader 클래스(Data 클래
     class1_count_after = resampled_class_counts[1] if len(resampled_class_counts) > 1 else 0
     print(f"  undersampling 적용 후 클래스 분포: 거래중={class0_count_after}, 경영악화={class1_count_after}")
 
-    # self.X_train 업데이트 (원래의 차원으로 복원)
-    # self.X_train.ndim을 직접 사용하여 차원 확인
+    # 2D -> 3D 복원 (n_samples, data_duration, num_features)
     if self.X_train.ndim > 2:
-        # 2D -> 3D 복원 (n_samples, data_duration, num_features)
-        original_matrix_shape = self.X_train.shape[1:]  # 원본 shape의 나머지 차원 (tuple)
+        original_matrix_shape = self.X_train.shape[1:]
         self.X_train = X_resampled_2d.reshape(-1, *original_matrix_shape)
     else:
-        self.X_train = X_resampled_2d  # 2D인 경우 그대로 할당
+        self.X_train = X_resampled_2d
 
     self.y_train = y_resampled  # y_train 업데이트
 
-    # name_train 업데이트: 유지된 샘플에 해당하는 name만 필터링
     if hasattr(sampler, 'sample_indices_') and sampler.sample_indices_ is not None:
         self.name_train = [name_input[idx] for idx in sampler.sample_indices_]
-        print(f"  유지된 샘플에 대해 'company_id' (name_train)를 필터링했습니다. (총 {len(self.name_train)}개)")
     else:
-        # 샘플러가 sample_indices_를 제공하지 않거나 (예: NearMiss)
-        # 또는 일부 샘플러에서 sample_indices_가 None인 경우
         if len(y_resampled) != len(name_input):
-            print(f"  경고: 샘플러가 인덱스를 명시적으로 제공하지 않아 name_train 필터링이 정확하지 않을 수 있습니다. y_resampled 길이에 맞춰 조정합니다.")
             self.name_train = name_input[:len(y_resampled)]
         else:
             self.name_train = name_input
@@ -181,24 +165,17 @@ def apply_undersampling(self):  # 이 함수는 DataLoader 클래스(Data 클래
 
     print(f"undersampling 적용 완료: 원본 {orig_total_samples}개 → 최종 {new_total_samples}개 샘플")
     print(f"제거된 샘플 수: {removed_samples_count}개 샘플")
-    print("=== undersampling 완료 ===\n")
 
-
-def apply_SMOTE(self):  # 이 함수는 DataLoader 클래스(Data 클래스)의 메서드
-    print("\n=== SMOTE 오버샘플링 시작 ===")
-
-    X_input = self.X_train
+def apply_SMOTE(self):
     y_input = self.y_train
-    name_input = self.name_train  # company_id 리스트
+    name_input = self.name_train
 
-    # Imblearn 샘플러는 2D 입력 (n_samples, n_features)를 기대합니다.
-    if self.X_train.ndim > 2:  # self.X_train.ndim을 직접 사용
+    if self.X_train.ndim > 2:
         num_samples_original = self.X_train.shape[0]
         X_input_reshaped_for_sampler = self.X_train.reshape(num_samples_original, -1)
-        print(f"  X_train이 {self.X_train.ndim}D이므로 샘플링을 위해 2D로 평탄화했습니다: {X_input_reshaped_for_sampler.shape}")
+        print(f"  샘플링을 위한 X_train 변환 결과: {X_input_reshaped_for_sampler.shape}")
     else:
         X_input_reshaped_for_sampler = self.X_train
-        print(f"  X_train이 2D이므로 샘플링을 위해 그대로 사용합니다: {X_input_reshaped_for_sampler.shape}")
 
     # 클래스 불균형 확인
     class_counts = np.bincount(y_input.astype(int))
@@ -206,16 +183,15 @@ def apply_SMOTE(self):  # 이 함수는 DataLoader 클래스(Data 클래스)의 
     orig_total_samples = len(y_input)
     print(f"  총 훈련 데이터: {orig_total_samples}개 샘플")
 
-    # SMOTE 적용
     if self.config['oversampling'] == 'BorderlineSMOTE':
         smote_sampler = BorderlineSMOTE(sampling_strategy='auto', k_neighbors=self.config.get('SMOTE_k_neighbors', 5),
-                                        kind='borderline-1', random_state=self.config['random_state'], n_jobs=-1)
+                                        kind='borderline-1', random_state=self.config['random_state'])
     elif self.config['oversampling'] == 'SMOTE':  # 일반 SMOTE
         smote_sampler = SMOTE(sampling_strategy=self.config['SMOTE_sampling_strategy'], k_neighbors=self.config['SMOTE_k_neighbors'],
-                              random_state=self.config['random_state'], n_jobs=-1)
+                              random_state=self.config['random_state'])
     else:
         print(f"  오류: 지원되지 않는 oversampling 방법 '{self.config['oversampling']}'입니다.")
-        return  # 함수 종료
+        return
 
     X_resampled_2d, y_resampled = smote_sampler.fit_resample(X_input_reshaped_for_sampler, y_input)
 
@@ -225,36 +201,25 @@ def apply_SMOTE(self):  # 이 함수는 DataLoader 클래스(Data 클래스)의 
     class1_count_after = resampled_class_counts[1] if len(resampled_class_counts) > 1 else 0
     print(f"  SMOTE 적용 후 클래스 분포: 거래중={class0_count_after}, 경영악화={class1_count_after}")
 
-    # self.X_train 업데이트 (원래의 차원으로 복원)
-    if self.X_train.ndim > 2:  # self.X_train.ndim을 직접 사용
+    if self.X_train.ndim > 2:
         original_matrix_shape = self.X_train.shape[1:]
         self.X_train = X_resampled_2d.reshape(-1, *original_matrix_shape)
     else:
-        self.X_train = X_resampled_2d  # 2D인 경우 그대로 할당
+        self.X_train = X_resampled_2d
 
-    self.y_train = y_resampled  # y_train 업데이트
+    self.y_train = y_resampled
 
     # name_train 업데이트: 합성된 샘플에 대한 company_id 생성
-    new_count = len(y_resampled) - orig_total_samples  # 추가된 샘플 수
+    new_count = len(y_resampled) - orig_total_samples
 
     # 원본 name_input에 추가될 합성 ID를 생성
-    synthetic_names = []
-    minority_names = [name_input[i] for i, label in enumerate(y_input) if label == 1]
-
-    if len(minority_names) > 0:
-        synthetic_names_array = np.random.choice(np.array(minority_names), size=new_count, replace=True)
-        synthetic_names = synthetic_names_array.tolist()
-        print(f"  경영악화 기업 ID 개수 (원본 소수 클래스): {len(minority_names)}개")
-    else:
-        print("  경고: 소수 클래스(경영악화)가 없어 SMOTE가 작동하지 않습니다. 합성 ID를 생성하지 않습니다.")
-        synthetic_names = []  # 합성 ID를 만들지 않음
+    synthetic_names = [f"synthetic_{i + 1}" for i in range(new_count)]
 
     # id 결합
     self.name_train = name_input + synthetic_names
 
     print(f"SMOTE 적용 완료: 원본 {orig_total_samples}개 → 최종 {len(y_resampled)}개 샘플")
     print(f"합성 데이터 생성: {new_count}개 샘플")
-    print("=== SMOTE 오버샘플링 완료 ===\n")
 
 
 def random_split(self):

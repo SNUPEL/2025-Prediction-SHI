@@ -20,15 +20,14 @@ def save_PCA_LDA(self, graph_name):
         x_test_processed = self.X_test
 
     # 특징 데이터프레임 생성
-    # 컬럼 이름은 기본 정수 인덱스로 생성되며, 이는 PCA/LDA에 문제 없음
     df_x_train = pd.DataFrame(x_train_processed)
     df_x_test = pd.DataFrame(x_test_processed)
 
     # set 및 label 컬럼 추가
     df_x_train['set'] = 'train'
     df_x_test['set'] = 'test'
-    df_x_train['label'] = self.y_train  # NumPy 배열 그대로 할당
-    df_x_test['label'] = self.y_test  # NumPy 배열 그대로 할당
+    df_x_train['label'] = self.y_train
+    df_x_test['label'] = self.y_test
 
     # company_id 컬럼 추가 (name_train/test 리스트 활용)
     df_x_train['company_id'] = self.name_train
@@ -45,16 +44,16 @@ def save_PCA_LDA(self, graph_name):
     # NaN 값 0으로 채우기
     features = features.fillna(0)
 
-    # # 3. PCA 적용 (3차원으로 축소)
+    # PCA 적용 (3차원으로 축소)
     print("PCA 적용하여 3차원으로 축소 중...")
     pca = PCA(n_components=3)
     principal_components = pca.fit_transform(features)
 
-    # 4. 시각화를 위한 최종 데이터프레임 생성
+    # 시각화를 위한 데이터프레임
     pca_df = pd.DataFrame(data=principal_components, columns=['PC1', 'PC2', 'PC3'])
     final_plot_df = pd.concat([pca_df, plot_info], axis=1)
 
-    # 5. 3D 시각화
+    # 3D 시각화
     print("3D 그래프 생성 중...")
     fig = plt.figure(figsize=(15, 12))
     ax = fig.add_subplot(111, projection='3d')
@@ -62,17 +61,16 @@ def save_PCA_LDA(self, graph_name):
     final_plot_df['group'] = final_plot_df['set'] + '_' + final_plot_df['label'].astype(str)
     colors = {
         'train_False': 'lightgray',
-        'train_True': 'deepskyblue',  # 훈련 데이터의 True
+        'train_True': 'deepskyblue',
         'test_False': 'dimgray',
-        'test_True': 'red'  # 테스트 데이터의 True (가장 중요)
+        'test_True': 'red'
     }
 
-    # [수정 2] 새로운 'group' 컬럼을 기준으로 색상을 지정하고, 마커는 'o'로 통일
     for index, row in final_plot_df.iterrows():
         ax.scatter(
             row['PC1'], row['PC2'], row['PC3'],
-            c=colors[row['group']],  # 그룹에 맞는 색상 사용
-            marker='o',  # 모든 마커를 원으로 통일
+            c=colors[row['group']],
+            marker='o',
             s=50,
             alpha=0.6
         )
@@ -80,6 +78,8 @@ def save_PCA_LDA(self, graph_name):
     # ax.set_xlim([-7, 5])
     # ax.set_ylim([-10, 40])
     # ax.set_zlim([-7, 5])
+
+    # 범위 설정 및 극단값 제외
     self.x_range = [final_plot_df['PC1'].quantile(0.01), final_plot_df['PC1'].quantile(0.99)]
     self.y_range = [final_plot_df['PC2'].quantile(0.01), final_plot_df['PC2'].quantile(0.99)]
     self.z_range = [final_plot_df['PC3'].quantile(0.01), final_plot_df['PC3'].quantile(0.99)]
@@ -93,7 +93,6 @@ def save_PCA_LDA(self, graph_name):
     ax.set_ylabel('Principal Component 2', fontsize=12)
     ax.set_zlabel('Principal Component 3', fontsize=12)
 
-    # 범례(Legend) 수동 생성
     from matplotlib.lines import Line2D
     legend_elements = [
         Line2D([0], [0], marker='o', color='w', label='Train, False', markerfacecolor=colors['train_False'],
@@ -102,7 +101,8 @@ def save_PCA_LDA(self, graph_name):
                markersize=10),
         Line2D([0], [0], marker='o', color='w', label='Test, False', markerfacecolor=colors['test_False'],
                markersize=10),
-        Line2D([0], [0], marker='o', color='w', label='Test, True', markerfacecolor=colors['test_True'], markersize=10)
+        Line2D([0], [0], marker='o', color='w', label='Test, True', markerfacecolor=colors['test_True'],
+               markersize=10)
     ]
     ax.legend(handles=legend_elements, title='Legend')
 
@@ -115,7 +115,6 @@ def save_PCA_LDA(self, graph_name):
     fig_true = plt.figure(figsize=(15, 12))
     ax_true = fig_true.add_subplot(111, projection='3d')
 
-    # 'train'과 'test'를 구분할 새로운 색상 맵을 정의
     colors_true = {'train': 'deepskyblue', 'test': 'red'}
     markers_true = {'train': 'o', 'test': 'X'}
 
@@ -137,11 +136,11 @@ def save_PCA_LDA(self, graph_name):
     ax_true.set_ylabel('Principal Component 2', fontsize=12)
     ax_true.set_zlabel('Principal Component 3', fontsize=12)
 
-    # 범례를 'Train, True'와 'Test, True'만 표시하도록 단순화
     legend_elements_true = [
         Line2D([0], [0], marker='o', color='w', label='Train, True', markerfacecolor=colors_true['train'],
                markersize=10),
-        Line2D([0], [0], marker='X', color='w', label='Test, True', markerfacecolor=colors_true['test'], markersize=10)
+        Line2D([0], [0], marker='X', color='w', label='Test, True', markerfacecolor=colors_true['test'],
+               markersize=10)
     ]
     ax_true.legend(handles=legend_elements_true, title='Legend (True Labels)')
 
@@ -162,24 +161,23 @@ def save_PCA_LDA(self, graph_name):
     lda_train = lda.transform(x_train_scaled_lda)
     lda_test = lda.transform(x_test_scaled_lda)
 
-    # 6. LDA 시각화를 위한 최종 데이터프레임 생성
+    # LDA 시각화를 위한 데이터프레임
     df_train_lda = pd.DataFrame(data=lda_train, columns=['LD1'])
     df_train_lda['set'] = 'train'
-    df_train_lda['label'] = y_train_lda.astype(bool)  # label을 bool로 변환
+    df_train_lda['label'] = y_train_lda.astype(bool)
 
     df_test_lda = pd.DataFrame(data=lda_test, columns=['LD1'])
     df_test_lda['set'] = 'test'
-    df_test_lda['label'] = y_test_lda.astype(bool)  # label을 bool로 변환
+    df_test_lda['label'] = y_test_lda.astype(bool)
 
     final_plot_df_lda = pd.concat([df_train_lda, df_test_lda], ignore_index=True)
 
-    # 7. 1D LDA 시각화 (스트립 플롯)
+    # 1D LDA 시각화 (스트립 플롯)
     print("1D 스트립 플롯 생성 중...")
     plt.figure(figsize=(15, 10))
 
-    # label을 bool로 변환했으므로 .astype(str) 시 'False'/'True' 문자열이 됨
     final_plot_df_lda['group'] = final_plot_df_lda['set'] + '_' + final_plot_df_lda['label'].astype(str)
-    colors_lda = {  # 색상 변수 이름을 다른 시각화와 구분
+    colors_lda = {
         'train_False': 'lightgray',
         'train_True': 'deepskyblue',
         'test_False': 'dimgray',
@@ -189,7 +187,7 @@ def save_PCA_LDA(self, graph_name):
     sns.stripplot(
         x='LD1', y='group', data=final_plot_df_lda,
         hue='group', palette=colors_lda, jitter=0.3, size=6, alpha=0.8,
-        order=['train_False', 'train_True', 'test_False', 'test_True'],  # order도 'False', 'True'로 통일
+        order=['train_False', 'train_True', 'test_False', 'test_True'],
         legend=False
     )
 
@@ -198,7 +196,6 @@ def save_PCA_LDA(self, graph_name):
     plt.ylabel('Group', fontsize=12)
     plt.grid(axis='x')
 
-    # 범례 생성
     legend_elements_lda = [
         Line2D([0], [0], marker='o', color='w', label='Train, False',
                markerfacecolor=colors_lda['train_False'], markersize=8),

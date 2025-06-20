@@ -76,14 +76,13 @@ class Model:
         else:
             print(f"Error: config['model_type'] '{self.config['model_type']}' was not found.")
 
-        # --- 학습 입력 데이터 엑셀 파일 저장 코드 (모델 학습 후) ---
+        # --- 학습 입력 데이터 엑셀 파일 저장 ---
         if self.model is not None:
             try:
                 if self.config['data_shape'] == 'flatten':
-                    # Flatten 모드: 폴더 없이 기존처럼 단일 엑셀 파일로 저장
-                    train_data_excel_path = os.path.join(self.config['result_folder_path'], 'training_data.xlsx')
+                    # Flatten 모드: 단일 엑셀 파일로 저장
+                    train_data_excel_path = os.path.join(self.config['result_folder_path'], 'train_data.xlsx')
 
-                    # self.data.X_train은 (샘플수, 총_피처수) 2D NumPy 배열
                     first_company_key = next(iter(self.data.company_dict))
                     feature_names_base = sorted(list(self.data.company_dict[first_company_key].data_dict.keys()))
                     data_duration = self.config['data_duration']
@@ -95,28 +94,28 @@ class Model:
 
                     df_X_train_to_save = pd.DataFrame(self.data.X_train, columns=flattened_column_names)
                     df_X_train_to_save['company_id'] = self.data.name_train
-                    df_X_train_to_save['label'] = self.data.y_train  # 라벨도 함께 저장
+                    df_X_train_to_save['label'] = self.data.y_train
+                    new_column_order = ['company_id', 'label'] + flattened_column_names
+                    df_X_train_to_save = df_X_train_to_save[new_column_order]
 
                     df_X_train_to_save.to_excel(train_data_excel_path, index=False)
                     print(f"\n=== 학습 입력 데이터 (Flattened) 저장 완료: {train_data_excel_path} ===")
 
                 elif self.config['data_shape'] == 'matrix':
-                    # Matrix 모드: 'training_data_matrix' 폴더 생성 후 개별 .xlsx 파일 및 라벨 CSV 저장
+                    # 'training_data_matrix' 폴더 생성 후 개별 .xlsx 파일 및 라벨 CSV 저장
                     matrix_train_folder_path = os.path.join(self.config['result_folder_path'], 'training_data_matrix')
                     os.makedirs(matrix_train_folder_path, exist_ok=True)  # 폴더 없으면 생성
 
-                    # 라벨 정보를 저장하기 위한 CSV 파일 준비
+                    # 라벨 정보를 저장하기 위한 CSV 파일
                     labels_csv_path = os.path.join(matrix_train_folder_path, 'matrix_training_labels.csv')
                     labels_data = []
 
-                    # self.data.X_train은 (샘플수, data_duration, num_features) 3D NumPy 배열이어야 함
                     for i in range(len(self.data.X_train)):
-                        sample_matrix = self.data.X_train[i]  # (data_duration, num_features) 2D 배열
+                        sample_matrix = self.data.X_train[i]
                         sample_label = self.data.y_train[i]
-                        sample_name = self.data.name_train[i]  # company_id_date 형식
+                        sample_name = self.data.name_train[i]
 
                         # 각 2D 행렬(NumPy 배열)을 Pandas DataFrame으로 변환 후 엑셀로 저장
-                        # 엑셀 파일 내의 컬럼 이름을 정의 (필요에 따라)
                         first_company_key = next(iter(self.data.company_dict))
                         feature_names_base = sorted(list(self.data.company_dict[first_company_key].data_dict.keys()))
 
@@ -126,38 +125,34 @@ class Model:
                         file_name_excel = f"{sample_name}_label_{sample_label}.xlsx"
                         file_path_excel = os.path.join(matrix_train_folder_path, file_name_excel)
 
-                        df_sample.to_excel(file_path_excel, index=False)  # 인덱스 없이 저장
+                        df_sample.to_excel(file_path_excel, index=False)
 
                         # 라벨 CSV 파일에 기록할 데이터 수집
                         labels_data.append({
                             'filename': file_name_excel,
                             'company_id_date': sample_name,
-                            'label': int(sample_label)  # bool이면 int로 변환
+                            'label': int(sample_label)
                         })
 
                     # 라벨 CSV 파일 저장
                     labels_df = pd.DataFrame(labels_data)
                     labels_df.to_csv(labels_csv_path, index=False, encoding='utf-8-sig')
 
-                    print(f"\n=== 학습 입력 데이터 (Matrix, 개별 .xlsx 파일) 저장 완료: {matrix_train_folder_path} 내 ===")
-                    print(f"    총 {len(self.data.X_train)}개 샘플 (.xlsx) 및 라벨 ({labels_csv_path}) 저장됨.")
+                    print(f"==== 학습 입력 데이터 저장 완료 ====")
+                    print(f"    총 {len(self.data.X_train)}개 샘플 (.xlsx) 및 라벨 저장됨.")
 
                 else:
-                    print(f"경고: 알 수 없는 data_shape '{self.config['data_shape']}' 입니다. 학습 입력 데이터를 저장하지 않습니다.")
+                    print(f"경고: 알 수 없는 data_shape '{self.config['data_shape']}'. 학습 입력 데이터 저장 실패.")
 
             except Exception as e:
                 print(f"\n!!! 학습 입력 데이터 저장 중 오류 발생: {e} !!!")
-
-            print(f"Model {self.config['model_type']} has been trained successfully")
         else:
-            print("모델 학습이 제대로 완료되지 않아 입력 데이터를 저장하지 않습니다.")
+            print("모델 학습이 완료되지 않아 입력 데이터 저장 불가.")
 
     def evaluate_model(self):
         evaluate_classifier(self)
-        print('Model has been evaluated successfully')
 
     def save_result(self):
-        # 모든 Series에 사용할 공통 인덱스 (company_id_날짜)
         common_index = self.data.name_test
 
         # 실제/예측 레이블 및 정확성 Series 생성
@@ -202,7 +197,6 @@ class Model:
             df_predict_result = pd.merge(df_predict_result_core, df_features_test, on='company_id', how='left')
 
         elif self.config['data_shape'] == 'matrix':
-            # Matrix 모드: 특징 데이터는 최종 결과 DataFrame에 직접 포함하지 않음
             df_predict_result = df_predict_result_core
             pass
 
@@ -253,20 +247,16 @@ class Model:
             # 클래스별 성능 섹션
             f.write("3. 클래스별 성능\n")
             f.write(
-                f"   - 경영악화(Caution) 클래스: {self.result['class_1_total']}개 중 {self.result['class_1_correct']}개 맞춤 ({self.result['class_1_accuracy']:.2%})\n")
+                f"   - 경영악화(1) 클래스: {self.result['class_1_total']}개 중 {self.result['class_1_correct']}개 맞춤 ({self.result['class_1_accuracy']:.2%})\n")
             f.write(
-                f"   - 거래중(Normal) 클래스: {self.result['class_0_total']}개 중 {self.result['class_0_correct']}개 맞춤 ({self.result['class_0_accuracy']:.2%})\n\n")
+                f"   - 거래중(0) 클래스: {self.result['class_0_total']}개 중 {self.result['class_0_correct']}개 맞춤 ({self.result['class_0_accuracy']:.2%})\n\n")
 
             # 혼동 행렬 섹션
             cm = self.result['confusion_matrix']
             f.write("4. 혼동 행렬\n")
-            f.write(f"            | 예측: Caution | 예측: Normal\n")
-            f.write(f"   실제: Caution | {cm[0][0]}          | {cm[0][1]}\n")
-            f.write(f"   실제: Normal  | {cm[1][0]}          | {cm[1][1]}\n\n")
-
-            f.write(f"===== 저장 시간: {time.strftime('%Y-%m-%d %H:%M:%S')} =====\n")
-
-        print(f"\n결과 요약 저장 완료: {summary_path}")
+            f.write(f"            | 예측: 경영악화(1) | 예측: 거래중(0)\n")
+            f.write(f"   실제: 경영악화(1) | {cm[0][0]}          | {cm[0][1]}\n")
+            f.write(f"   실제: 거래중(0)  | {cm[1][0]}          | {cm[1][1]}\n\n")
 
         # 모델 하이퍼파라미터 엑셀 파일 저장
         try:
