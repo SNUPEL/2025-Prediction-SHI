@@ -9,7 +9,7 @@ def create_config():
     config = dict()
 
     # 데이터 파일 및 보조 파일 경로 설정
-    config['data_file_path'] = '../data/사내협력사 현황(철수사&거래 협력사)_ Data_추가(250417)_데이터추가.xlsx'
+    config['data_file_path'] = '../data/사내협력사 현황(철수사&거래 협력사)_ Data_추가(250417).xlsx'
     config['sub_data_file_path'] = '../data/사내협력사 현황(철수사&거래 협력사)_출근인력(추가).xlsx'
     # 데이터 로딩 방식 설정 (All: 당사 투입일 ~ 당사 철수일, Padding: 모든 기간)
     config['use_all_data'] = 'All'
@@ -45,7 +45,7 @@ def create_config():
     config['scale_by'] = 'feature'
 
     # 데이터 분석 및 가시화 그래프를 저장, matrix시 불가능
-    config['save_graph'] = True
+    config['save_graph'] = False
 
     config['test_data_ratio'] = 0.3  # 사용안함
 
@@ -66,7 +66,7 @@ def create_config():
     # ML model: 'RandomForestClassifier', 'AdaBoostClassifier', 'ExtraTreesClassifier',
     # 'RidgeClassifier', 'SGDClassifier', 'XGBClassifier', 'SVC',
     # DL model: 'ConvLSTM'
-    config['model_type'] = 'AdaBoostClassifier'  # 사용할 모델 타입
+    config['model_type'] = 'XGBClassifier'  # 사용할 모델 타입
 
     # flatten, matrix
     config['data_shape'] = 'flatten'

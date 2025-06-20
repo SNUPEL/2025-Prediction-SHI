@@ -14,10 +14,10 @@ def get_XGBClassifier(self):
         n_jobs=-1
     )
 
-    self.model.fit(self.data.X_train.drop(columns=["company_id"]), self.data.y_train)
+    self.model.fit(self.data.X_train, self.data.y_train)
     self.data.y_pred = pd.Series(
-        self.model.predict(self.data.X_test.drop(columns=["company_id"])),
-        index=self.data.y_test.index,
+        self.model.predict(self.data.X_test),
+        index=self.data.name_test,
         name='label'
     )
 
