@@ -125,6 +125,9 @@ dmypy.json
 
 .idea/
 *.xlsx
+!multichannel/add_data.xlsx
+!multichannel/Data.xlsx
+
 *.png
 *.joblib
 *.tmp
