@@ -7,6 +7,7 @@ from get_LinearClassifier import *
 from get_XGBClassifier import *
 from get_SVC import *
 from get_ConvLSTM import *
+from get_MultiChannelCNNLSTM import *
 import os
 import time
 import matplotlib.pyplot as plt
@@ -73,6 +74,8 @@ class Model:
             get_SVC(self)
         elif self.config['model_type'] == 'ConvLSTM':
             get_ConvLSTM(self)
+        elif self.config['model_type'] == 'MultiChannelCNNLSTM':
+            get_MultiChannelCNNLSTM(self)
         else:
             print(f"Error: config['model_type'] '{self.config['model_type']}' was not found.")
 
@@ -140,6 +143,37 @@ class Model:
 
                     print(f"==== 학습 입력 데이터 저장 완료 ====")
                     print(f"    총 {len(self.data.X_train)}개 샘플 (.xlsx) 및 라벨 저장됨.")
+
+                elif self.config['data_shape'] == 'multichannel':
+                    # MultiChannel 형태 데이터 저장
+                    multichannel_folder = os.path.join(self.config['result_folder_path'], 'multichannel_training_data')
+                    os.makedirs(multichannel_folder, exist_ok=True)
+                    
+                    # 모델 하이퍼파라미터에서 시트 이름 가져오기
+                    sheet_names = self.models_hyperparameters.get('sheet_names', [])
+                    
+                    # 각 채널(시트)별로 저장
+                    for channel_idx, sheet_name in enumerate(sheet_names):
+                        channel_folder = os.path.join(multichannel_folder, f'channel_{channel_idx}_{sheet_name}')
+                        os.makedirs(channel_folder, exist_ok=True)
+                        
+                        # 해당 채널의 데이터만 추출하여 저장
+                        channel_data = []
+                        for i in range(len(self.data.X_train)):
+                            sample_channel_data = self.data.X_train[i, channel_idx, :, 0]  # [time_points]
+                            channel_data.append({
+                                'company_id': self.data.name_train[i],
+                                'label': self.data.y_train[i],
+                                'time_series': sample_channel_data.tolist()
+                            })
+                        
+                        # CSV로 저장
+                        df_channel = pd.DataFrame(channel_data)
+                        channel_file = os.path.join(channel_folder, f'{sheet_name}_data.csv')
+                        df_channel.to_csv(channel_file, index=False, encoding='utf-8-sig')
+                    
+                    print(f"==== MultiChannel 학습 입력 데이터 저장 완료 ====")
+                    print(f"    총 {len(sheet_names)}개 채널별 데이터 저장됨.")
 
                 else:
                     print(f"경고: 알 수 없는 data_shape '{self.config['data_shape']}'. 학습 입력 데이터 저장 실패.")

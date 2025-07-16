@@ -103,6 +103,42 @@ def split_data(self):
         print(f"테스트 데이터 X 형태: {self.X_test.shape}")
         print(f"테스트 데이터 y 형태: {self.y_test.shape}")
 
+    elif self.config['data_shape'] == 'multichannel':
+        # 각 시트별로 독립적인 채널 생성
+        multichannel_X_train = []
+        multichannel_X_test = []
+        
+        # 훈련 데이터 변환
+        for matrix_data in temp_X_train:
+            # (data_duration, num_features) → (num_channels, data_duration, 1)
+            multichannel_sample = np.zeros((num_features, self.config['data_duration'], 1))
+            for channel_idx in range(num_features):  # 각 시트 = 각 채널
+                for time_idx in range(self.config['data_duration']):
+                    multichannel_sample[channel_idx, time_idx, 0] = matrix_data[time_idx, channel_idx]
+            multichannel_X_train.append(multichannel_sample)
+        
+        # 테스트 데이터 변환
+        for matrix_data in temp_X_test:
+            multichannel_sample = np.zeros((num_features, self.config['data_duration'], 1))
+            for channel_idx in range(num_features):  # 각 시트 = 각 채널
+                for time_idx in range(self.config['data_duration']):
+                    multichannel_sample[channel_idx, time_idx, 0] = matrix_data[time_idx, channel_idx]
+            multichannel_X_test.append(multichannel_sample)
+
+        # NumPy 배열로 변환
+        self.X_train = np.nan_to_num(np.array(multichannel_X_train), nan=0.0)
+        self.y_train = np.array(temp_y_train)
+        self.name_train = temp_name_train
+
+        self.X_test = np.nan_to_num(np.array(multichannel_X_test), nan=0.0)
+        self.y_test = np.array(temp_y_test)
+        self.name_test = temp_name_test
+
+        print("MultiChannel용 텐서 생성 완료.")
+        print(f"훈련 데이터 X 형태: {self.X_train.shape} (samples, channels, time_points, features)")
+        print(f"테스트 데이터 X 형태: {self.X_test.shape}")
+        print(f"채널 수: {num_features}개 (시트: {feature_names})")
+
 
 def apply_undersampling(self):
     y_input = self.y_train
@@ -189,6 +225,8 @@ def apply_SMOTE(self):
     elif self.config['oversampling'] == 'SMOTE':  # 일반 SMOTE
         smote_sampler = SMOTE(sampling_strategy=self.config['SMOTE_sampling_strategy'], k_neighbors=self.config['SMOTE_k_neighbors'],
                               random_state=self.config['random_state'])
+    elif self.config['oversampling'] == 'TSSMOTE':  # TSSMOTE 추가
+        return apply_TSSMOTE(self)
     else:
         print(f"  오류: 지원되지 않는 oversampling 방법 '{self.config['oversampling']}'입니다.")
         return
@@ -220,6 +258,98 @@ def apply_SMOTE(self):
 
     print(f"SMOTE 적용 완료: 원본 {orig_total_samples}개 → 최종 {len(y_resampled)}개 샘플")
     print(f"합성 데이터 생성: {new_count}개 샘플")
+
+def apply_TSSMOTE(self):
+    """
+    TimeSeries SMOTE 적용 (MultiChannel 데이터용)
+    """
+    print("  TSSMOTE 적용 시작...")
+    
+    y_input = self.y_train
+    name_input = self.name_train
+    X_input = self.X_train
+    
+    # 클래스 분포 확인
+    class_counts = np.bincount(y_input.astype(int))
+    print(f"  TSSMOTE 적용 전 클래스 분포: 거래중={class_counts[0]}, 경영악화={class_counts[1] if len(class_counts) > 1 else 0}")
+    orig_total_samples = len(y_input)
+    print(f"  총 훈련 데이터: {orig_total_samples}개 샘플")
+    
+    # 소수 클래스가 충분히 있는지 확인
+    if len(class_counts) <= 1 or class_counts[1] < 2:
+        print("  소수 클래스 샘플이 부족하여 TSSMOTE를 적용할 수 없습니다.")
+        return
+    
+    # 소수/다수 클래스 분리
+    minority_indices = np.where(y_input == 1)[0]
+    majority_indices = np.where(y_input == 0)[0]
+    
+    # 필요한 샘플 수 계산
+    n_samples_needed = max(0, len(majority_indices) - len(minority_indices))
+    
+    if n_samples_needed == 0:
+        print("  클래스가 이미 균형 상태입니다. TSSMOTE를 적용하지 않습니다.")
+        return
+    
+    # 소수 클래스 데이터 추출
+    X_minority = X_input[minority_indices]
+    n_minority = len(minority_indices)
+    k = min(self.config.get('SMOTE_k_neighbors', 5), n_minority - 1)
+    
+    # 간단한 유클리드 거리 기반 시계열 유사도 계산
+    print(f"  시계열 유사도 계산 중... (k={k})")
+    
+    synthetic_X = []
+    synthetic_names = []
+    
+    # 각 소수 클래스 샘플에 대해 합성 샘플 생성
+    samples_per_minority = int(np.ceil(n_samples_needed / n_minority))
+    
+    for i in range(n_minority):
+        # 현재 샘플과 다른 모든 소수 클래스 샘플들 간의 거리 계산
+        distances = []
+        for j in range(n_minority):
+            if i != j:
+                # 평탄화하여 유클리드 거리 계산
+                dist = np.linalg.norm(X_minority[i].flatten() - X_minority[j].flatten())
+                distances.append((dist, j))
+        
+        # k개 최근접 이웃 선택
+        distances.sort(key=lambda x: x[0])
+        neighbors = [idx for _, idx in distances[:k]]
+        
+        # 필요한 만큼 합성 샘플 생성
+        for _ in range(samples_per_minority):
+            if len(synthetic_X) >= n_samples_needed:
+                break
+                
+            # 이웃 중 하나 선택
+            nn_idx = np.random.choice(neighbors)
+            
+            # 보간 비율 (0.2-0.8 사이)
+            alpha = 0.2 + 0.6 * np.random.random()
+            
+            # 새 샘플 생성 (선형 보간)
+            new_sample = X_minority[i] * alpha + X_minority[nn_idx] * (1 - alpha)
+            synthetic_X.append(new_sample)
+            synthetic_names.append(f"synthetic_tssmote_{len(synthetic_X)}")
+    
+    # 결과 합치기
+    if synthetic_X:
+        X_resampled = np.vstack([X_input, np.array(synthetic_X)])
+        y_resampled = np.concatenate([y_input, np.ones(len(synthetic_X))])
+        name_resampled = name_input + synthetic_names
+        
+        self.X_train = X_resampled
+        self.y_train = y_resampled
+        self.name_train = name_resampled
+        
+        # 결과 로깅
+        new_class_counts = np.bincount(y_resampled.astype(int))
+        print(f"  TSSMOTE 적용 후 클래스 분포: 거래중={new_class_counts[0]}, 경영악화={new_class_counts[1]}")
+        print(f"  생성된 합성 샘플: {len(synthetic_X)}개")
+    else:
+        print("  유효한 합성 샘플을 생성할 수 없습니다.")
 
 
 def random_split(self):

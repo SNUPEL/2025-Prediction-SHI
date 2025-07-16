@@ -9,8 +9,11 @@ def create_config():
     config = dict()
 
     # 데이터 파일 및 보조 파일 경로 설정
-    config['data_file_path'] = '../data/사내협력사 현황(철수사&거래 협력사)_ Data_추가(250417).xlsx'
+    config['data_file_path'] = '../data/사내협력사 현황(철수사&거래 협력사)_ Data_추가(250418).xlsx'
     config['sub_data_file_path'] = '../data/사내협력사 현황(철수사&거래 협력사)_출근인력(추가).xlsx'
+
+    # config['data_file_path'] = '../data/Data.xlsx'
+    # config['sub_data_file_path'] = '../data/add_data.xlsx'
     # 데이터 로딩 방식 설정 (All: 당사 투입일 ~ 당사 철수일, Padding: 모든 기간)
     config['use_all_data'] = 'All'
     # 데이터 사용의 가장 이른 시작 시점 설정
@@ -58,26 +61,41 @@ def create_config():
 
     # SMOTE 오버샘플링 사용 여부 설정
     # SMOTE 사용시 경영 악화 데이터 증강으로 예측도 높아짐
-    # oversampling: SMOTE, BorderlineSMOTE
-    config['oversampling'] = 'SMOTE'
+    # oversampling: SMOTE, BorderlineSMOTE, TSSMOTE
+    config['oversampling'] = 'TSSMOTE'
     config['SMOTE_k_neighbors'] = 5
     config['SMOTE_sampling_strategy'] = 1
 
     # ML model: 'RandomForestClassifier', 'AdaBoostClassifier', 'ExtraTreesClassifier',
     # 'RidgeClassifier', 'SGDClassifier', 'XGBClassifier', 'SVC',
-    # DL model: 'ConvLSTM'
-    config['model_type'] = 'XGBClassifier'  # 사용할 모델 타입
+    # DL model: 'ConvLSTM', 'MultiChannelCNNLSTM'
+    config['model_type'] = 'MultiChannelCNNLSTM'  # 사용할 모델 타입
 
-    # flatten, matrix
-    config['data_shape'] = 'flatten'
+    # flatten, matrix, multichannel
+    config['data_shape'] = 'multichannel'
     config['sub_window_size'] = 3
+
+    # MultiChannel 모델 하이퍼파라미터
+    config['hidden_size'] = 128
+    config['cnn_filters'] = 64
+    config['kernel_size'] = 3
+    config['dropout'] = 0.5
+    config['use_channel_attention'] = True
+    config['use_temporal_attention'] = True
+    
+    # 학습 관련 설정
+    config['epochs'] = 100
+    config['batch_size'] = 32
+    config['patience'] = 15
+    config['learning_rate'] = 0.001
+    config['weight_decay'] = 1e-4
 
     # model parameter:
     config['AdaBoost_parameter'] = {'n_estimators': 10, "learning_rate": 0.01}
     # config['AdaBoost_estimator_parameter'] = {'max_depth': 4, 'min_samples_split': 2}
     config['class_weight'] = {0: 1, 1: 10000}
     # 학습된 모델 저장 여부 설정
-    config['save_model'] = False
+    config['save_model'] = True
 
     config['detailed_results'] = True  # 상세 결과 출력 여부
     config['save_predictions'] = True  # 예측 결과 저장 여부

@@ -167,7 +167,9 @@ def load_data(self):
                         try:
                             extracted_series = row_date_data_series.reindex(company_obj.date_range)
 
-                            processed_series = extracted_series.fillna(0).astype(float)
+                            # processed_series = extracted_series.fillna(0).astype(float)
+                            # pandas FutureWarning 방지: fillna 후 infer_objects 호출
+                            processed_series = extracted_series.fillna(0).infer_objects(copy=False).astype(float)
 
                             company_obj.data_dict[sheet_name] = processed_series
 
