@@ -85,6 +85,8 @@ def load_data(self):
         # comparison_date를 결정. 이 날짜는 이 회사의 데이터 포인트 생성을 고려할 마지막 날짜
         # 조정된 종료 날짜(r_end_date, 회사가 경영악화된 경우)와 self.label_date 중 더 이른 날짜를 사용
         # 회사가 종료되지 않았거나 self.label_date보다 늦게 종료된 경우 self.label_date를 사용
+        # comparison_date = self.label_date - pd.DateOffset(months=1)
+        # if r_label and r_end_date is not None and r_end_date <= comparison_date:
         comparison_date = self.label_date
         if r_label and r_end_date is not None and r_end_date <= self.label_date:
             comparison_date = r_end_date  # 회사가 경영악화되었고 조정된 종료일이 label_date보다 같거나 이전이면 해당 종료일 사용
@@ -100,7 +102,7 @@ def load_data(self):
         r_condition = True if comparison_date >= r_start_date else False
 
         self.company_dict[original_company_id]\
-            = Company(original_company_id, row[df_temp.columns[1]],row[df_temp.columns[2]], row[df_temp.columns[3]],
+            = Company(original_company_id, row[df_temp.columns[1]], row[df_temp.columns[2]], row[df_temp.columns[3]],
                       r_start_date, r_end_date, comparison_date, date_range, r_label,
                       r_condition, age, data_masking_duration, severity_level)
 
@@ -168,6 +170,7 @@ def load_data(self):
                             extracted_series = row_date_data_series.reindex(company_obj.date_range)
 
                             processed_series = extracted_series.fillna(0).astype(float)
+                            # processed_series = extracted_series.fillna(0).infer_objects(copy=False).astype(float)
 
                             company_obj.data_dict[sheet_name] = processed_series
 

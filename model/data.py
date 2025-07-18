@@ -14,7 +14,8 @@ class Data:
         self.df_raw_data_dict = dict()
         self.sheet_name_list = list()
         self.company_dict = dict()
-        self.split_cutoff_date = pd.to_datetime(self.config['split_cutoff_date']).replace(day=1)
+        # self.split_cutoff_date = pd.to_datetime(self.config['split_cutoff_date']).replace(day=1)
+        self.split_cutoff_date = self.label_date - pd.DateOffset(months=self.config['data_duration'] + self.config['label_duration'])
         self.df_model = pd.DataFrame()
         self.df_x = pd.DataFrame()
         self.df_y = pd.DataFrame()
@@ -36,23 +37,23 @@ class Data:
         split_data(self)
         print("==== 데이터 분할 완료 =====\n")
 
-        print("\n==== 데이터 분할 후 PCA, LDA 분석 시작 ===")
         if self.config['save_graph']:
+            print("\n==== 데이터 분할 후 PCA, LDA 분석 시작 ===")
             save_PCA_LDA(self, graph_name='after_split')
-        print("==== 데이터 분할 후 PCA, LDA 분석 완료 =====\n")
+            print("==== 데이터 분할 후 PCA, LDA 분석 완료 =====\n")
 
-        print("\n==== 데이터 undersampling 적용 시작 ====")
         if self.config['undersampling']:
+            print("\n==== 데이터 undersampling 적용 시작 ====")
             apply_undersampling(self)
-        print("==== 데이터 undersampling 적용 완료 =====\n")
+            print("==== 데이터 undersampling 적용 완료 =====\n")
 
-        print("\n==== 데이터 oversampling 적용 시작 ====")
         if self.config['oversampling']:
+            print("\n==== 데이터 oversampling 적용 시작 ====")
             apply_SMOTE(self)
-        print("==== 데이터 oversampling 적용 완료 =====\n")
+            print("==== 데이터 oversampling 적용 완료 =====\n")
 
-        print("\n==== 데이터 증강 후 PCA, LDA 분석 시작 ====")
-        if self.config['save_graph']:
+        if self.config['save_graph'] and (self.config['undersampling'] or self.config['oversampling']):
+            print("\n==== 데이터 증강 후 PCA, LDA 분석 시작 ====")
             save_PCA_LDA(self, graph_name='after_under_oversampling')
-        print("==== 데이터 증강 후 PCA, LDA 분석 완료 =====\n")
+            print("==== 데이터 증강 후 PCA, LDA 분석 완료 =====\n")
 

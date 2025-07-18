@@ -21,18 +21,30 @@ def split_data(self):
     for company_id, company in self.company_dict.items():
         for date in company.date_range:
             name = str(company_id) + '_' + str(date.date())
-
-            label_date = date + pd.DateOffset(months=self.config['data_duration'] - 1 + self.config['label_duration'])
-
-            if company.date_range and label_date > company.date_range[-1]:
+            if date > self.split_cutoff_date and self.split_cutoff_date + pd.DateOffset(months=self.config['data_duration'] + self.config['label_duration']) > company.date_range[-1]:
                 break
 
-            # 레이블 결정 로직은 동일
-            label = True if company.label and company.end_date - pd.DateOffset(
-                months=self.config['label_duration'] - 1) <= label_date <= company.end_date else False
+
+            # label_date = date + pd.DateOffset(months=self.config['data_duration'] - 1 + self.config['label_duration'])
+            # window_start_date = date
+            # window_end_date = date + pd.DateOffset(months=self.config['data_duration'] - 1)
+            #
+            # if company.date_range and label_date > company.date_range[-1]:
+            #     break
+            #
+            # # 레이블 결정 로직은 동일
+            # label = True if company.label and company.end_date - pd.DateOffset(
+            #     months=self.config['label_duration'] - 1) <= label_date <= company.end_date else False
+
+            # 갯수안되면 test로 안들어가게 해야하는데
 
             window_start_date = date
             window_end_date = date + pd.DateOffset(months=self.config['data_duration'] - 1)
+            label_date = window_end_date + pd.DateOffset(months=self.config['label_duration'])
+            if company.date_range and window_end_date >= company.date_range[-1]:
+                break
+
+            label = True if company.label and window_end_date < company.end_date <= label_date else False
 
             # 2. 특징 데이터를 항상 (data_duration, num_features) 매트릭스 형태로 생성
             instance_features = np.zeros((self.config['data_duration'], num_features))

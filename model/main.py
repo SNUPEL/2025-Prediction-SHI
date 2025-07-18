@@ -11,7 +11,7 @@ if __name__ == '__main__':
     print(f"입력 데이터 길이: {config['data_duration']}")
     print(f"라벨 판단 시점: {config['label_date']}")
     print(f"라벨 판단 길이: {config['label_duration']}")
-    print(f"사용하지 않는 시트: {config['label_duration']}")
+    print(f"사용하지 않는 시트: {config['sheet_ban_list']}")
     print(f"정규화 기법: {config['scaler']}")
     print(f"Undersampling 기법: {config['undersampling']}")
     print(f"Oversampling 기법: {config['oversampling']}")

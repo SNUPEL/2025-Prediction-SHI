@@ -7,6 +7,7 @@ from get_LinearClassifier import *
 from get_XGBClassifier import *
 from get_SVC import *
 from get_ConvLSTM import *
+from get_AutoEncoder import *
 import os
 import time
 import matplotlib.pyplot as plt
@@ -73,6 +74,8 @@ class Model:
             get_SVC(self)
         elif self.config['model_type'] == 'ConvLSTM':
             get_ConvLSTM(self)
+        elif self.config['model_type'] == 'AutoEncoder':
+            get_AutoEncoder(self)
         else:
             print(f"Error: config['model_type'] '{self.config['model_type']}' was not found.")
 
