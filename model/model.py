@@ -13,6 +13,7 @@ import time
 import matplotlib.pyplot as plt
 import matplotlib.font_manager as fm
 import sys
+from get_RidgeClassifier_optimized import *
 
 
 class Model:
@@ -66,6 +67,7 @@ class Model:
             get_ExtraTreesClassifier(self)
         elif self.config['model_type'] == 'RidgeClassifier':
             get_RidgeClassifier(self)
+            # get_RidgeClassifier_optimized(self)
         elif self.config['model_type'] == 'SGDClassifier':
             get_SGDClassifier(self)
         elif self.config['model_type'] == 'XGBClassifier':

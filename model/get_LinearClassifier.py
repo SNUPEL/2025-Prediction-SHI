@@ -5,7 +5,8 @@ import joblib
 
 def get_RidgeClassifier(self):
     self.model = RidgeClassifier(
-        random_state=self.config['random_state']
+        random_state=self.config['random_state'],
+        class_weight={0: 56, 1: 620}
     )
 
     self.model.fit(self.data.X_train, self.data.y_train)
