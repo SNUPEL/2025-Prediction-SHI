@@ -66,8 +66,8 @@ class Model:
         elif self.config['model_type'] == 'ExtraTreesClassifier':
             get_ExtraTreesClassifier(self)
         elif self.config['model_type'] == 'RidgeClassifier':
-            get_RidgeClassifier(self)
-            # get_RidgeClassifier_optimized(self)
+            # get_RidgeClassifier(self)
+            get_RidgeClassifier_optimized(self)
         elif self.config['model_type'] == 'SGDClassifier':
             get_SGDClassifier(self)
         elif self.config['model_type'] == 'XGBClassifier':

@@ -9,8 +9,8 @@ from sklearn.metrics import make_scorer, recall_score, accuracy_score, fbeta_sco
 
 def objective(self, trial):
     # RidgeClassifer의 class_weight 최적화
-    class_weight_False = trial.suggest_int("class_weight_False", 1, 1000)
-    class_weight_True = trial.suggest_int("class_weight_True", 1, 1000)
+    class_weight_False = trial.suggest_int("class_weight_False", 1, 2000)
+    class_weight_True = trial.suggest_int("class_weight_True", 1, 2000)
     class_weight = {0: class_weight_False, 1: class_weight_True}
 
     model = RidgeClassifier(
@@ -82,6 +82,7 @@ def get_RidgeClassifier_optimized(self):
 
     # 최적 하이퍼파라미터 추출
     best_params = best_trial.params
+    class_weight = {0: best_params['class_weight_False'], 1: best_params['class_weight_True']}
 
 
     # 최적 파라미터로 최종 모델 생성
@@ -89,7 +90,7 @@ def get_RidgeClassifier_optimized(self):
     self.model = RidgeClassifier(
 
         random_state=self.config.get('random_state', 42),
-        class_weight=best_params
+        class_weight=class_weight
     )
 
     print("\n최적 파라미터로 전체 훈련 데이터에 모델 재학습 중...")
@@ -103,9 +104,8 @@ def get_RidgeClassifier_optimized(self):
     X_test_final = self.data.X_test
     self.data.y_pred = pd.Series(
         self.model.predict(X_test_final),
-        index=self.data.y_test.index,
-        name=self.data.y_test.name if hasattr(self.data.y_test,
-                                              'name') and self.data.y_test.name is not None else 'label'
+        index=self.data.name_test,
+        name='label'
     )
 
     self.models_hyperparameters = self.model.get_params()
