@@ -7,39 +7,22 @@ import numpy as np
 
 
 def save_PCA_LDA(self, graph_name):
-    # 훈련 데이터 처리: 3D (matrix) -> 2D 평탄화, 2D (flatten)는 그대로 사용
-    if self.X_train.ndim > 2:
-        x_train_processed = self.X_train.reshape(self.X_train.shape[0], -1)
+    if graph_name == 'after_split':
+        df_train = self.df_train.copy()
+        df_test = self.df_test.copy()
     else:
-        x_train_processed = self.X_train
+        df_train = self.df_train_after_sampling.copy()
+        df_test = self.df_test.copy()
 
-    # 테스트 데이터 처리: 3D (matrix) -> 2D 평탄화, 2D (flatten)는 그대로 사용
-    if self.X_test.ndim > 2:
-        x_test_processed = self.X_test.reshape(self.X_test.shape[0], -1)
-    else:
-        x_test_processed = self.X_test
-
-    # 특징 데이터프레임 생성
-    df_x_train = pd.DataFrame(x_train_processed)
-    df_x_test = pd.DataFrame(x_test_processed)
-
-    # set 및 label 컬럼 추가
-    df_x_train['set'] = 'train'
-    df_x_test['set'] = 'test'
-    df_x_train['label'] = self.y_train
-    df_x_test['label'] = self.y_test
-
-    # company_id 컬럼 추가 (name_train/test 리스트 활용)
-    df_x_train['company_id'] = self.name_train
-    df_x_test['company_id'] = self.name_test
+    df_train['set'] = 'train'
+    df_test['set'] = 'test'
 
     # 훈련 및 테스트 데이터프레임 결합
-    combined_df = pd.concat([df_x_train, df_x_test], ignore_index=True)
+    combined_df = pd.concat([df_train, df_test], ignore_index=True)
 
-    # company_id, set, label 컬럼 분리
-    # company_id 컬럼을 유지하여 나중에 특정 샘플을 추적할 수 있도록 함
-    plot_info = combined_df[['company_id', 'set', 'label']].copy()
-    features = combined_df.drop(columns=['company_id', 'set', 'label'])
+    # set, label 컬럼 분리
+    plot_info = combined_df[['set', 'label']].copy()
+    features = combined_df.drop(columns=['set', 'label'])
 
     # NaN 값 0으로 채우기
     features = features.fillna(0)
@@ -74,10 +57,6 @@ def save_PCA_LDA(self, graph_name):
             s=50,
             alpha=0.6
         )
-
-    # ax.set_xlim([-7, 5])
-    # ax.set_ylim([-10, 40])
-    # ax.set_zlim([-7, 5])
 
     # 범위 설정 및 극단값 제외
     self.x_range = [final_plot_df['PC1'].quantile(0.01), final_plot_df['PC1'].quantile(0.99)]
@@ -148,27 +127,22 @@ def save_PCA_LDA(self, graph_name):
     plt.show()
     print("테스트 데이터 전용 시각화 그래프가 'data_distribution_pca_test_only.png' 파일로 저장되었습니다.")
 
-    x_train_scaled_lda = x_train_processed
-    x_test_scaled_lda = x_test_processed
-    y_train_lda = self.y_train
-    y_test_lda = self.y_test
-
     print("LDA 적용하여 1차원으로 축소 중...")
     lda = LDA(n_components=1)
 
-    lda.fit(x_train_scaled_lda, y_train_lda)
+    lda.fit(self.df_x_train_flatten,  list(self.df_y_train['label']))
 
-    lda_train = lda.transform(x_train_scaled_lda)
-    lda_test = lda.transform(x_test_scaled_lda)
+    lda_train = lda.transform(self.df_x_train_flatten)
+    lda_test = lda.transform(self.df_x_test_flatten)
 
     # LDA 시각화를 위한 데이터프레임
     df_train_lda = pd.DataFrame(data=lda_train, columns=['LD1'])
     df_train_lda['set'] = 'train'
-    df_train_lda['label'] = y_train_lda.astype(bool)
+    df_train_lda['label'] = list(self.df_y_train['label'])
 
     df_test_lda = pd.DataFrame(data=lda_test, columns=['LD1'])
     df_test_lda['set'] = 'test'
-    df_test_lda['label'] = y_test_lda.astype(bool)
+    df_test_lda['label'] = list(self.df_y_test['label'])
 
     final_plot_df_lda = pd.concat([df_train_lda, df_test_lda], ignore_index=True)
 

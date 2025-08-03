@@ -1,6 +1,7 @@
 from config import *
 from data import *
 from model import *
+from XAI import *
 
 if __name__ == '__main__':
     start_time = time.time()
@@ -23,9 +24,9 @@ if __name__ == '__main__':
     data.load_data()
     print("==== 데이터 로딩 완료 =====\n")
 
-    print("\n==== 데이터 전처리 시작====")
+    print("\n====== 데이터 전처리 시작======")
     data.preprocess_data()
-    print("==== 데이터 전처리 완료 =====\n")
+    print("====== 데이터 전처리 완료 =======\n")
 
     model = Model(config, data)
     print(f"\n==== {config['model_type']} 모델 학습 시작 ====")
@@ -39,5 +40,10 @@ if __name__ == '__main__':
     print("\n==== 결과 저장 시작 ====")
     model.save_result()
     print("==== 결과 저장 완료 =====\n")
+
+    if config['XAI']:
+        print("\n==== XAI ====")
+        get_dice(config, data, model)
+        print("\n==== XAI 종료 ====")
 
     print('Run Time: ', time.time() - start_time)

@@ -1,28 +1,25 @@
 from sklearn.ensemble import ExtraTreesClassifier
+from sklearn.utils.class_weight import compute_sample_weight
 import joblib
 import pandas as pd
 
 
 def get_ExtraTreesClassifier(self):
     self.model = ExtraTreesClassifier(
-        n_estimators=1000,
-        max_depth=50,
-        min_samples_split=2,
-        min_samples_leaf=1,
-        max_features='sqrt',
+        **self.config['model_parameter'],
         random_state=self.config['random_state']
-        # n_jobs=-1
     )
 
-    self.model.fit(self.data.X_train, self.data.y_train)
-    self.data.y_pred = pd.Series(
-        self.model.predict(self.data.X_test),
+    self.model.fit(self.data.df_x_train_flatten, self.data.df_y_train['label'],
+                   sample_weight=compute_sample_weight(class_weight=self.config.get('class_weight'),
+                                                       y=self.data.df_y_train['label']))
+    self.data.df_y_pred = pd.DataFrame(
+        self.model.predict(self.data.df_x_test_flatten),
         index=self.data.name_test,
-        name='label'
+        columns=['label']
     )
 
     self.models_hyperparameters = self.model.get_params()
 
-    # save model
     if self.config['save_model']:
         joblib.dump(self.model, self.config['result_folder_path'] + '/ExtraTreesClassifier model.joblib')

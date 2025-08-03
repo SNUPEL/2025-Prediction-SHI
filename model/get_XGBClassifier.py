@@ -1,28 +1,24 @@
 from xgboost import XGBClassifier
+from sklearn.utils.class_weight import compute_sample_weight
 import pandas as pd
 import joblib
 
 
 def get_XGBClassifier(self):
     self.model = XGBClassifier(
-        n_estimators=1000,
-        learning_rate=0.001,
-        max_depth=50,
-        gamma=0.1,
-        min_child_weight=1,
-        random_state=self.config['random_state'],
-        n_jobs=-1
+        **self.config['model_parameter'],
+        random_state=self.config['random_state']
     )
 
-    self.model.fit(self.data.X_train, self.data.y_train)
-    self.data.y_pred = pd.Series(
-        self.model.predict(self.data.X_test),
+    self.model.fit(self.data.df_x_train_flatten, self.data.df_y_train['label'],
+                   sample_weight=compute_sample_weight(class_weight=self.config['class_weight'],
+                                                       y=self.data.df_y_train['label']))
+
+    self.data.df_y_pred = pd.DataFrame(
+        self.model.predict(self.data.df_x_test_flatten),
         index=self.data.name_test,
-        name='label'
+        columns=['label']
     )
 
-    self.models_hyperparameters = self.model.get_params()
-
-    # save model
     if self.config['save_model']:
         joblib.dump(self.model, self.config['result_folder_path'] + '/XGBClassifier model.joblib')
