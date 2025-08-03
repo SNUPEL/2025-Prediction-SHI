@@ -7,6 +7,7 @@ from get_LinearClassifier import *
 from get_XGBClassifier import *
 from get_SVC import *
 from get_ConvLSTM import *
+from get_MultiChannelCNNLSTM import *
 from get_AutoEncoder import *
 import os
 import matplotlib.pyplot as plt
@@ -20,7 +21,7 @@ class Model:
         self.config = config
         self.data = data
         self.model = None
-        self.back_end = None
+        self.history = None
         self.result = dict()
         
         # 한글 폰트 설정
@@ -76,6 +77,8 @@ class Model:
             get_nuSVC(self)
         elif self.config['model_type'] == 'ConvLSTM':
             get_ConvLSTM(self)
+        elif self.config['model_type'] == 'MultiChannelCNNLSTM':
+            get_MultiChannelCNNLSTM(self)
         elif self.config['model_type'] == 'AutoEncoder':
             get_AutoEncoder(self)
         else:
@@ -142,7 +145,6 @@ class Model:
 
         df_final_result.to_excel(os.path.join(self.config['result_folder_path'], 'predict_result.xlsx'), index=True)
 
-        # --- 2. 결과 요약 텍스트 파일 저장 (result_summary.txt) ---
         summary_path = os.path.join(self.config['result_folder_path'], 'result_summary.txt')
         with open(summary_path, 'w', encoding='utf-8') as f:
             f.write(f"===== {self.config['model_type']} 모델 예측 결과 요약 =====\n\n")
@@ -165,6 +167,18 @@ class Model:
 
         result_df = pd.json_normalize(self.result, sep='_').transpose()
         result_df.to_excel(self.config['result_folder_path'] + '/specific result.xlsx', index=True)
+
+        if self.config['save_loss_history'] and self.history is not None:
+            plt.figure(figsize=(10, 5))
+            plt.plot(self.history['train_loss'], label='Train Loss')
+            plt.plot(self.history['val_loss'], label='Validation Loss')
+            plt.title('Learning Curves')
+            plt.xlabel('Epochs')
+            plt.ylabel('Loss')
+            plt.legend()
+            plt.grid(True)
+            plt.savefig(os.path.join(self.config['result_folder_path'], 'loss_curves.png'))
+            plt.close()
 
         if self.config['save_confusion_matrix']:
             plt.figure(figsize=(8, 6))

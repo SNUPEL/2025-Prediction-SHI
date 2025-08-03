@@ -42,14 +42,17 @@ def create_convlstm_5d_sequences_internal(data_array, sub_window_size):
 
 def get_ConvLSTM(self):
     tf.random.set_seed(self.config['random_state'])
-    X_train_3d = np.array(list(self.data.df_x_train_matrix_dict_after_sampling.values()))
-    y_train = np.array(list(self.data.df_y_train_dict_after_sampling.values()))
+    if self.config['undersampling'] or self.config['oversampling']:
+        X_train_3d = np.array(list(self.data.df_x_train_matrix_dict_after_sampling.values()))
+        y_train = np.array(list(self.data.df_y_train_dict_after_sampling.values()))
+    else:
+        X_train_3d = np.array(list(self.data.df_x_train_matrix_dict.values()))
+        y_train = np.array(list(self.data.df_y_train_dict.values()))
     X_test_3d = np.array(list(self.data.df_x_test_matrix_dict.values()))
 
     X_train_5d = create_convlstm_5d_sequences_internal(X_train_3d, self.config['sub_window_size'])
     X_test_5d = create_convlstm_5d_sequences_internal(X_test_3d, self.config['sub_window_size'])
 
-    # --- 2. 모델 구조 동적 생성 ---
     input_shape = X_train_5d.shape[1:]
     input_layer = Input(shape=input_shape)
     x = input_layer
@@ -73,7 +76,6 @@ def get_ConvLSTM(self):
     output_layer = Dense(**model_params['output_layer'])(x)
     self.model = Model(inputs=input_layer, outputs=output_layer)
 
-    # --- 3. 모델 컴파일 ---
     compile_params = self.config['compile_parameter']
     optimizer = Adam(learning_rate=compile_params['learning_rate'], clipnorm=compile_params['clipnorm'])
     self.model.compile(optimizer=optimizer, loss=compile_params['loss'], metrics=compile_params['metrics'])
@@ -81,7 +83,6 @@ def get_ConvLSTM(self):
 
     self.model.fit(x=X_train_5d, y=y_train, **self.config['fit_parameter'])
 
-    # --- 5. 예측 및 결과 저장 ---
     y_pred_proba = self.model.predict(X_test_5d)
     y_pred_class = (y_pred_proba > self.config['threshold']).astype(int)
 

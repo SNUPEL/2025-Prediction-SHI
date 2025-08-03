@@ -1,3 +1,11 @@
+import warnings
+# pandas의 모든 FutureWarning 완전 차단
+warnings.filterwarnings('ignore', category=FutureWarning, module='pandas')
+warnings.filterwarnings('ignore', message='.*fillna.*deprecated.*')
+warnings.filterwarnings('ignore', message='.*Dtype inference.*deprecated.*')
+# 추가적인 pandas 경고들도 차단
+warnings.filterwarnings('ignore', category=FutureWarning)
+import time
 from config import *
 from data import *
 from model import *

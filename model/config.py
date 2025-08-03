@@ -41,13 +41,13 @@ def create_config():
     config['scale_by'] = 'feature'
 
     # 데이터 분석 및 가시화 그래프를 저장
-    config['save_graph'] = False
+    config['save_graph'] = True
 
     # ML model: 'RandomForestClassifier', 'AdaBoostClassifier', 'ExtraTreesClassifier',
     # 'RidgeClassifier', 'SGDClassifier', 'XGBClassifier', 'SVC', 'nuSVC'
-    # DL model: 'ConvLSTM', 'AutoEncoder'
-    config['model_type'] = 'ExtraTreesClassifier'  # 사용할 모델 타입
-    config['XAI'] = True
+    # DL model: 'ConvLSTM', 'MultiChannelCNNLSTM', 'AutoEncoder'
+    config['model_type'] = 'SVC'  # 사용할 모델 타입
+    config['XAI'] = True  # True, False // 현재 ML 모델에 대해서만 구현
 
     # undersampling: None, tomek_link, ENN, nearmiss
     # oversampling: None, SMOTE, BorderlineSMOTE
@@ -60,7 +60,7 @@ def create_config():
             'ENN_parameter': {'sampling_strategy': 'auto', 'n_neighbors': 200},
             'oversampling': 'SMOTE',
             'SMOTE_parameter': {'sampling_strategy': 0.5, 'k_neighbors': 30},
-            'model_parameter': {'n_estimators': 10, 'max_depth': 25, 'min_samples_split': 2,
+            'model_parameter': {'n_estimators': 1000, 'max_depth': 25, 'min_samples_split': 2,
                                 'min_samples_leaf': 1, 'max_features': 'sqrt'},
             'class_weight': {0: 1, 1: 1000}
         },
@@ -72,8 +72,8 @@ def create_config():
             'ENN_parameter': {'sampling_strategy': 'auto', 'n_neighbors': 200},
             'oversampling': 'SMOTE',
             'SMOTE_parameter': {'sampling_strategy': 0.5, 'k_neighbors': 30},
-            'model_parameter': {'n_estimators': 10, "learning_rate": 0.001},
-            'estimator_parameter': {'max_depth': 4, 'min_samples_split': 2},
+            'model_parameter': {'n_estimators': 1000, "learning_rate": 0.001},
+            'estimator_parameter': {'max_depth': 2, 'min_samples_split': 2},
             'class_weight': {0: 1, 1: 1000}
         },
 
@@ -194,7 +194,7 @@ def create_config():
                 'loss': 'mean_squared_error'
             },
             'fit_parameter': {
-                'epochs': 50,
+                'epochs': 100,
                 'batch_size': 64,
                 'shuffle': True,
                 'validation_split': 0.2
@@ -231,11 +231,43 @@ def create_config():
                 'metrics': ['accuracy', Recall()]
             },
             'fit_parameter': {
-                'epochs': 2,
+                'epochs': 50,
                 'batch_size': 64,
                 'validation_split': 0.2,
                 'class_weight': {0: 1, 1: 1000},
                 'shuffle': True
+            },
+            'threshold': 0.5
+        },
+
+        'MultiChannelCNNLSTM': {
+            'back_end': 'pytorch',
+            'data_shape': 'multichannel',
+            'undersampling': 'ENN',
+            'ENN_parameter': {'sampling_strategy': 'auto', 'n_neighbors': 200},
+            'oversampling': 'SMOTE',
+            'SMOTE_parameter': {'sampling_strategy': 0.5, 'k_neighbors': 30},
+            'model_parameter': {
+                'hidden_size': 128,
+                'cnn_filters': 64,
+                'kernel_size': 3,
+                'dropout': 0.5,
+                'use_channel_attention': True,
+                'use_temporal_attention': True
+            },
+            'optimizer_parameter': {
+                'lr': 0.001,
+                'weight_decay': 1e-4
+            },
+            'scheduler_parameter': {
+                'mode': 'min',
+                'factor': 0.5,
+                'patience': 10
+            },
+            'fit_parameter': {
+                'epochs': 50,
+                'batch_size': 32,
+                'early_stopping_patience': 15
             },
             'threshold': 0.5
         }
@@ -247,17 +279,18 @@ def create_config():
         'method': 'genetic',  # 설명 방식 ('random', 'genetic', 'kdtree')
         # 설명할 대상: 'predicted_positives', 'misclassified'
         'query_instance_mode': 'misclassified',
-        'total_CFs': 2,  # 찾을 대안의 최대 개수
+        'total_CFs': 4,  # 찾을 대안의 최대 개수
         'desired_class': 'opposite',  # 반대 클래스로 바뀌는 대안을 찾음
         'permitted_range': [-1, 1],
         'features_to_vary_substrings': []  # 변경을 허용할 피처 이름에 포함된 문자열 리스트
     }
 
     # 학습된 모델 저장 여부 설정
-    config['save_model'] = False
-    config['save_train_data'] = False
-    config['save_test_data'] = False
-    config['save_confusion_matrix'] = False  # 혼동 행렬 저장 여부
+    config['save_model'] = False  # 추가 구현 필요
+    config['save_train_data'] = True
+    config['save_test_data'] = True
+    config['save_confusion_matrix'] = True  # 혼동 행렬 저장 여부
+    config['save_loss_history'] = True
 
     # 결과 저장 폴더 설정 (타임스탬프 기반)
     config['ymd'] = time.strftime('%Y%m%d')
