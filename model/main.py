@@ -27,6 +27,8 @@ if __name__ == '__main__':
     print(f"선택된 모델: {config['model_type']}")
     print("=================\n")
 
+    # 전체 랜덤 설정 코드 추가
+
     data = Data(config)
     print("\n==== 데이터 로딩 시작 ====")
     data.load_data()

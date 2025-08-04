@@ -22,7 +22,7 @@ def create_config():
     config['data_duration'] = 12
     # 예측하는 시점을 정의(해당 일자까지 데이터가 존재한다고 가정)
     # config['label_date'] = '2024-08-01'
-    config['label_date'] = '2022-03-01'
+    config['label_date'] = '2023-03-01'
     # 라벨 판단 기준에 필요한 길이
     config['label_duration'] = 3
     # train, test 겹치는 기간 사용 여부
@@ -41,13 +41,13 @@ def create_config():
     config['scale_by'] = 'feature'
 
     # 데이터 분석 및 가시화 그래프를 저장
-    config['save_graph'] = True
+    config['save_graph'] = False
 
     # ML model: 'RandomForestClassifier', 'AdaBoostClassifier', 'ExtraTreesClassifier',
     # 'RidgeClassifier', 'SGDClassifier', 'XGBClassifier', 'SVC', 'nuSVC'
     # DL model: 'ConvLSTM', 'MultiChannelCNNLSTM', 'AutoEncoder'
-    config['model_type'] = 'SVC'  # 사용할 모델 타입
-    config['XAI'] = True  # True, False // 현재 ML 모델에 대해서만 구현
+    config['model_type'] = 'ConvLSTM'  # 사용할 모델 타입
+    config['XAI'] = False  # True, False // 현재 ML 모델에 대해서만 구현
 
     # undersampling: None, tomek_link, ENN, nearmiss
     # oversampling: None, SMOTE, BorderlineSMOTE
@@ -60,6 +60,7 @@ def create_config():
             'ENN_parameter': {'sampling_strategy': 'auto', 'n_neighbors': 200},
             'oversampling': 'SMOTE',
             'SMOTE_parameter': {'sampling_strategy': 0.5, 'k_neighbors': 30},
+            'TSSMOTE_parameter': {'sampling_strategy': 0.5, 'k_neighbors': 30},
             'model_parameter': {'n_estimators': 1000, 'max_depth': 25, 'min_samples_split': 2,
                                 'min_samples_leaf': 1, 'max_features': 'sqrt'},
             'class_weight': {0: 1, 1: 1000}
@@ -72,6 +73,7 @@ def create_config():
             'ENN_parameter': {'sampling_strategy': 'auto', 'n_neighbors': 200},
             'oversampling': 'SMOTE',
             'SMOTE_parameter': {'sampling_strategy': 0.5, 'k_neighbors': 30},
+            'TSSMOTE_parameter': {'sampling_strategy': 0.5, 'k_neighbors': 30},
             'model_parameter': {'n_estimators': 1000, "learning_rate": 0.001},
             'estimator_parameter': {'max_depth': 2, 'min_samples_split': 2},
             'class_weight': {0: 1, 1: 1000}
@@ -84,6 +86,7 @@ def create_config():
             'ENN_parameter': {'sampling_strategy': 'auto', 'n_neighbors': 200},
             'oversampling': 'SMOTE',
             'SMOTE_parameter': {'sampling_strategy': 0.5, 'k_neighbors': 30},
+            'TSSMOTE_parameter': {'sampling_strategy': 0.5, 'k_neighbors': 30},
             'model_parameter': {'n_estimators': 1000, 'max_depth': 50, 'min_samples_split': 2,
                                 'min_samples_leaf': 1, 'max_features': 'sqrt'},
             'class_weight': {0: 1, 1: 1000}
@@ -96,6 +99,7 @@ def create_config():
             'ENN_parameter': {'sampling_strategy': 'auto', 'n_neighbors': 200},
             'oversampling': 'SMOTE',
             'SMOTE_parameter': {'sampling_strategy': 0.5, 'k_neighbors': 30},
+            'TSSMOTE_parameter': {'sampling_strategy': 0.5, 'k_neighbors': 30},
             'model_parameter': {
                 'alpha': 1.0,          # 규제 강도
                 'solver': 'auto',      # 계산 알고리즘
@@ -111,6 +115,7 @@ def create_config():
             'ENN_parameter': {'sampling_strategy': 'auto', 'n_neighbors': 200},
             'oversampling': 'SMOTE',
             'SMOTE_parameter': {'sampling_strategy': 0.5, 'k_neighbors': 30},
+            'TSSMOTE_parameter': {'sampling_strategy': 0.5, 'k_neighbors': 30},
             'model_parameter': {
                 'loss': 'hinge',      # 손실 함수 ('hinge': 선형 SVM, 'log_loss': 로지스틱 회귀)
                 'penalty': 'l2',       # 규제 종류 ('l2', 'l1', 'elasticnet')
@@ -128,6 +133,7 @@ def create_config():
             'ENN_parameter': {'sampling_strategy': 'auto', 'n_neighbors': 200},
             'oversampling': 'SMOTE',
             'SMOTE_parameter': {'sampling_strategy': 0.5, 'k_neighbors': 30},
+            'TSSMOTE_parameter': {'sampling_strategy': 0.5, 'k_neighbors': 30},
             'model_parameter': {
                 'n_estimators': 1000,
                 'learning_rate': 0.01,
@@ -145,6 +151,7 @@ def create_config():
             'ENN_parameter': {'sampling_strategy': 'auto', 'n_neighbors': 200},
             'oversampling': 'SMOTE',
             'SMOTE_parameter': {'sampling_strategy': 0.5, 'k_neighbors': 30},
+            'TSSMOTE_parameter': {'sampling_strategy': 0.5, 'k_neighbors': 30},
             'model_parameter': {
                 'probability': True,   # XAI 사용시 True
                 'C': 1.0,              # 규제 파라미터. 작을수록 규제가 강함
@@ -159,8 +166,9 @@ def create_config():
             'data_shape': 'flatten',
             'undersampling': 'ENN',
             'ENN_parameter': {'sampling_strategy': 'auto', 'n_neighbors': 200},
-            'oversampling': 'SMOTE',
+            'oversampling': 'TSSMOTE',
             'SMOTE_parameter': {'sampling_strategy': 0.5, 'k_neighbors': 30},
+            'TSSMOTE_parameter': {'sampling_strategy': 0.5, 'k_neighbors': 30},
             'model_parameter': {
                 'probability': True,   # XAI 사용시 True
                 'nu': 0.1,
@@ -206,21 +214,22 @@ def create_config():
             'back_end': 'tensorflow',
             'data_shape': 'matrix',
             'undersampling': 'ENN',
-            'ENN_parameter': {'sampling_strategy': 'auto', 'n_neighbors': 200},
-            'oversampling': 'SMOTE',
+            'ENN_parameter': {'sampling_strategy': 'auto', 'n_neighbors': 250},
+            'oversampling': 'TSSMOTE',
             'SMOTE_parameter': {'sampling_strategy': 0.5, 'k_neighbors': 30},
+            'TSSMOTE_parameter': {'sampling_strategy': 1, 'k_neighbors': 10},
             'sub_window_size': 4,
             'model_parameter': {
                 'dropout_rate': 0.7,
                 'convlstm_layers': [
-                    {'filters': 256, 'kernel_width': 2, 'padding': "same", 'return_sequences': True, 'activation': 'tanh'},
-                    {'filters': 128, 'kernel_width': 2, 'padding': "same", 'return_sequences': True, 'activation': 'tanh'},
-                    {'filters': 64, 'kernel_width': 2, 'padding': "same", 'return_sequences': True, 'activation': 'tanh'}
+                    {'filters': 32, 'kernel_width': 2, 'padding': "same", 'return_sequences': True, 'activation': 'relu'},
+                    {'filters': 16, 'kernel_width': 2, 'padding': "same", 'return_sequences': True, 'activation': 'relu'},
+                    {'filters': 8, 'kernel_width': 2, 'padding': "same", 'return_sequences': True, 'activation': 'relu'}
                 ],
                 'bilstm_layers': [
-                    {'units': 256, 'return_sequences': True, 'activation': 'tanh', 'l2_reg': 0.001},
-                    {'units': 128, 'return_sequences': True, 'activation': 'tanh', 'l2_reg': 0.001},
-                    {'units': 64, 'return_sequences': False, 'activation': 'tanh', 'l2_reg': 0.001}
+                    {'units': 32, 'return_sequences': True, 'activation': 'relu', 'l2_reg': 0.001},
+                    {'units': 16, 'return_sequences': True, 'activation': 'relu', 'l2_reg': 0.001},
+                    {'units': 8, 'return_sequences': False, 'activation': 'relu', 'l2_reg': 0.001}
                 ],
                 'output_layer': {'units': 1, 'activation': 'sigmoid'}
             },
@@ -233,8 +242,8 @@ def create_config():
             'fit_parameter': {
                 'epochs': 50,
                 'batch_size': 64,
-                'validation_split': 0.2,
-                'class_weight': {0: 1, 1: 1000},
+                'validation_split': 0.1,
+                'class_weight': {0: 1, 1: 30},
                 'shuffle': True
             },
             'threshold': 0.5
@@ -247,6 +256,7 @@ def create_config():
             'ENN_parameter': {'sampling_strategy': 'auto', 'n_neighbors': 200},
             'oversampling': 'SMOTE',
             'SMOTE_parameter': {'sampling_strategy': 0.5, 'k_neighbors': 30},
+            'TSSMOTE_parameter': {'sampling_strategy': 1, 'k_neighbors': 10},
             'model_parameter': {
                 'hidden_size': 128,
                 'cnn_filters': 64,
@@ -287,8 +297,8 @@ def create_config():
 
     # 학습된 모델 저장 여부 설정
     config['save_model'] = False  # 추가 구현 필요
-    config['save_train_data'] = True
-    config['save_test_data'] = True
+    config['save_train_data'] = False
+    config['save_test_data'] = False
     config['save_confusion_matrix'] = True  # 혼동 행렬 저장 여부
     config['save_loss_history'] = True
 

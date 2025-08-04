@@ -81,7 +81,11 @@ def get_ConvLSTM(self):
     self.model.compile(optimizer=optimizer, loss=compile_params['loss'], metrics=compile_params['metrics'])
     self.model.summary()
 
-    self.model.fit(x=X_train_5d, y=y_train, **self.config['fit_parameter'])
+    history = self.model.fit(x=X_train_5d, y=y_train, **self.config['fit_parameter'])
+    self.history = {
+        'train_loss': history.history['loss'],
+        'val_loss': history.history['val_loss'],
+    }
 
     y_pred_proba = self.model.predict(X_test_5d)
     y_pred_class = (y_pred_proba > self.config['threshold']).astype(int)
