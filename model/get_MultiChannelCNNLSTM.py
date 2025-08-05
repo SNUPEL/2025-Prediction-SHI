@@ -7,7 +7,6 @@ from tqdm.auto import tqdm
 import numpy as np
 import pandas as pd
 import os
-from multichannel_models import MultiChannelCNNLSTM
 
 
 class MultiChannelCNNLSTM(nn.Module):

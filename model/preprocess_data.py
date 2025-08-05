@@ -33,6 +33,10 @@ def split_data(self):
 
             label = True if company.label and window_end_date < company.end_date <= label_date else False
 
+            # 경영악화이며, 경/중이 경이면 제외
+            if self.config['severity_label_type'] and label and company.severity_level == 'B':
+                continue
+
             # 2. 특징 데이터를 항상 (data_duration, num_features) 매트릭스 형태로 생성
             # instance_features = np.zeros((self.config['data_duration'], num_features))
             # for i in range(self.config['data_duration']):
@@ -48,7 +52,7 @@ def split_data(self):
                     instance_features[j, i] = val
 
             # 3. 통합된 오버랩 및 분할 로직
-            # 이 부분이 핵심. 모든 데이터는 matrix 형태로 생성된 후, 여기서 train/test로 분리
+            # 모든 데이터는 matrix 형태로 생성된 후, 여기서 train/test로 분리
             if date <= self.split_cutoff_date:
                 # 'overlap'이 False이고 윈도우가 분할 기준을 넘어가는 경우, 훈련 세트에 포함시키지 않음
                 if not self.config.get('overlap', True) and window_end_date > self.split_cutoff_date:

@@ -25,6 +25,8 @@ def create_config():
     config['label_date'] = '2023-03-01'
     # 라벨 판단 기준에 필요한 길이
     config['label_duration'] = 3
+    # True면 경/중 경을 포함하지 않음 (label이 True인 기간만 제외, False인 기간은 사용)
+    config['severity_label_type'] = False
     # train, test 겹치는 기간 사용 여부
     config['overlap'] = False
 
@@ -227,9 +229,9 @@ def create_config():
                     {'filters': 8, 'kernel_width': 2, 'padding': "same", 'return_sequences': True, 'activation': 'relu'}
                 ],
                 'bilstm_layers': [
-                    {'units': 32, 'return_sequences': True, 'activation': 'relu', 'l2_reg': 0.001},
                     {'units': 16, 'return_sequences': True, 'activation': 'relu', 'l2_reg': 0.001},
-                    {'units': 8, 'return_sequences': False, 'activation': 'relu', 'l2_reg': 0.001}
+                    {'units': 8, 'return_sequences': True, 'activation': 'relu', 'l2_reg': 0.001},
+                    {'units': 4, 'return_sequences': False, 'activation': 'relu', 'l2_reg': 0.001}
                 ],
                 'output_layer': {'units': 1, 'activation': 'sigmoid'}
             },
