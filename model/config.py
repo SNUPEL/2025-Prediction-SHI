@@ -13,7 +13,7 @@ def create_config():
     config['random_state'] = 42  # 랜덤 시드
 
     # 데이터 파일 및 보조 파일 경로 설정
-    config['data_file_path'] = '../data/사내협력사 현황(철수사&거래 협력사)_ Data_추가(250417)_데이터추가.xlsx'
+    config['data_file_path'] = '../data/사내협력사 현황(철수사&거래 협력사)_ Data_종합평가수정본.xlsx'
     config['sub_data_file_path'] = '../data/사내협력사 현황(철수사&거래 협력사)_출근인력(추가).xlsx'
 
     # 데이터 사용의 가장 이른 시작 시점 설정
@@ -48,7 +48,7 @@ def create_config():
     # ML model: 'RandomForestClassifier', 'AdaBoostClassifier', 'ExtraTreesClassifier',
     # 'RidgeClassifier', 'SGDClassifier', 'XGBClassifier', 'SVC', 'nuSVC'
     # DL model: 'ConvLSTM', 'MultiChannelCNNLSTM', 'AutoEncoder'
-    config['model_type'] = 'ConvLSTM'  # 사용할 모델 타입
+    config['model_type'] = 'RidgeClassifier'  # 사용할 모델 타입
     config['XAI'] = False  # True, False // 현재 ML 모델에 대해서만 구현
 
     # undersampling: None, tomek_link, ENN, nearmiss
