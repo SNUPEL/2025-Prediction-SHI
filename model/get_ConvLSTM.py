@@ -5,8 +5,8 @@ print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
 from tensorflow.keras.models import Model
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.metrics import Recall
-from tensorflow.keras.layers import (Input, ConvLSTM2D, BatchNormalization, Flatten, Dense,
-                                     Dropout, TimeDistributed, LSTM, Bidirectional)
+from tensorflow.keras.layers import (Input, ConvLSTM2D, BatchNormalization, Flatten, Dense, Activation,
+                                     Dropout, TimeDistributed, Add, Conv1D, Conv3D, LSTM, Bidirectional)
 from tensorflow.keras.regularizers import l2
 from sklearn.utils.class_weight import compute_class_weight
 from sklearn.utils import shuffle
@@ -59,19 +59,94 @@ def get_ConvLSTM(self):
 
     model_params = self.config['model_parameter']
 
-    # ConvLSTM 레이어
-    for params in model_params['convlstm_layers']:
-        kernel_width = params.pop('kernel_width')
-        x = ConvLSTM2D(kernel_size=(input_shape[1], kernel_width), **params)(x)
+    for i, params in enumerate(model_params['convlstm_layers']):
+        shortcut = x
+        layer_parmas = params.copy()
+        kernel_width = layer_parmas.pop('kernel_width')
+        activation_func = layer_parmas.pop('activation', 'relu')
+
+        x = ConvLSTM2D(kernel_size=(input_shape[1], kernel_width), **layer_parmas)(x)
+
+        if shortcut.shape[-1] != x.shape[-1]:
+            shortcut = Conv3D(filters=layer_parmas['filters'], kernel_size=1, padding='same')(shortcut)
+
+        x = Add()([x, shortcut])
+        x = Activation(activation_func)(x)
         x = Dropout(model_params['dropout_rate'])(x)
 
-    x = TimeDistributed(Flatten())(x)
+    x = Flatten()(x)
+    x = Dropout(model_params['dropout_rate'])(x)  # 최종 분류기 전 Dropout
 
-    # Bidirectional LSTM 레이어
-    for params in model_params['bilstm_layers']:
-        regularizer = l2(params.pop('l2_reg'))
-        x = Bidirectional(LSTM(kernel_regularizer=regularizer, **params))(x)
-        x = Dropout(model_params['dropout_rate'])(x)
+    ###################################
+    # for i, params in enumerate(model_params['convlstm_layers']):
+    #     # 현재 블록의 입력(shortcut으로 사용)
+    #     shortcut = x
+    #     layer_parmas = params.copy()
+    #     # ConvLSTM 레이어 (기존과 동일)
+    #     # kernel_width와 activation을 params에서 분리
+    #     kernel_width = layer_parmas.pop('kernel_width')
+    #     activation_func = layer_parmas.pop('activation', 'relu')  # 설정에 activation이 없으면 relu 기본 사용
+    #
+    #     x = ConvLSTM2D(kernel_size=(input_shape[1], kernel_width), **layer_parmas)(x)
+    #
+    #     # 프로젝션: 입력(shortcut)과 출력(x)의 채널(필터 수)이 다르면 차원을 맞춰줌
+    #     if shortcut.shape[-1] != x.shape[-1]:
+    #         shortcut = Conv3D(filters=layer_parmas['filters'], kernel_size=1, padding='same')(shortcut)
+    #
+    #     # 잔차 연결 (입력과 출력을 더함)
+    #     x = Add()([x, shortcut])
+    #     x = Activation(activation_func)(x)  # 활성화 함수는 Add 이후에 적용
+    #     x = Dropout(model_params['dropout_rate'])(x)
+    #
+    #     # --- 2. 차원 축소 (기존과 동일) ---
+    # x = TimeDistributed(Flatten())(x)
+    #
+    # # --- 3. Bidirectional LSTM 레이어 블록 with 잔차 연결 ---
+    # for i, params in enumerate(model_params['bilstm_layers']):
+    #     # 마지막 BiLSTM 레이어는 return_sequences=False 이므로 잔차 연결을 적용하지 않음
+    #     layer_parmas = params.copy()
+    #     if not layer_parmas.get('return_sequences', False) and i == len(model_params['bilstm_layers']) - 1:
+    #         regularizer = l2(layer_parmas.pop('l2_reg'))
+    #         x = Bidirectional(LSTM(kernel_regularizer=regularizer, **layer_parmas))(x)
+    #         x = Dropout(model_params['dropout_rate'])(x)
+    #         break
+    #
+    #     # 현재 블록의 입력(shortcut으로 사용)
+    #     shortcut = x
+    #
+    #     # BiLSTM 레이어 (기존과 동일)
+    #     regularizer = l2(layer_parmas.pop('l2_reg'))
+    #     activation_func = layer_parmas.pop('activation', 'relu')
+    #
+    #     x = Bidirectional(LSTM(kernel_regularizer=regularizer, **layer_parmas))(x)
+    #
+    #     # 프로젝션: 입력(shortcut)과 출력(x)의 유닛 수가 다르면 차원을 맞춰줌
+    #     if shortcut.shape[-1] != x.shape[-1]:
+    #         # BiLSTM 출력 차원은 units * 2 이므로, 필터 수를 맞춰줌
+    #         shortcut = Conv1D(filters=layer_parmas['units'] * 2, kernel_size=1, padding='same')(shortcut)
+    #
+    #     # 잔차 연결
+    #     x = Add()([x, shortcut])
+    #     x = Activation(activation_func)(x)
+    #     x = Dropout(model_params['dropout_rate'])(x)
+    ###################################
+
+
+    #######################################
+    # # ConvLSTM 레이어
+    # for params in model_params['convlstm_layers']:
+    #     kernel_width = params.pop('kernel_width')
+    #     x = ConvLSTM2D(kernel_size=(input_shape[1], kernel_width), **params)(x)
+    #     x = Dropout(model_params['dropout_rate'])(x)
+    #
+    # x = TimeDistributed(Flatten())(x)
+    #
+    # # Bidirectional LSTM 레이어
+    # for params in model_params['bilstm_layers']:
+    #     regularizer = l2(params.pop('l2_reg'))
+    #     x = Bidirectional(LSTM(kernel_regularizer=regularizer, **params))(x)
+    #     x = Dropout(model_params['dropout_rate'])(x)
+    ################################
 
     output_layer = Dense(**model_params['output_layer'])(x)
     self.model = Model(inputs=input_layer, outputs=output_layer)
@@ -90,6 +165,11 @@ def get_ConvLSTM(self):
     y_pred_proba = self.model.predict(X_test_5d)
     y_pred_class = (y_pred_proba > self.config['threshold']).astype(int)
 
+    self.data.df_y_pred_proba = pd.DataFrame(
+        y_pred_proba,
+        index=self.data.name_test,
+        columns=['label']
+    )
     self.data.df_y_pred = pd.DataFrame(
         y_pred_class,
         index=self.data.name_test,

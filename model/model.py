@@ -8,6 +8,8 @@ from get_XGBClassifier import *
 from get_SVC import *
 from get_ConvLSTM import *
 from get_MultiChannelCNNLSTM import *
+from get_ResNet import *
+from get_MLP_Mixer import *
 from get_AutoEncoder import *
 import os
 import matplotlib.pyplot as plt
@@ -79,6 +81,10 @@ class Model:
             get_ConvLSTM(self)
         elif self.config['model_type'] == 'MultiChannelCNNLSTM':
             get_MultiChannelCNNLSTM(self)
+        elif self.config['model_type'] == 'ResNet':
+            get_ResNet(self)
+        elif self.config['model_type'] == 'MLP_Mixer':
+            get_MLP_Mixer(self)
         elif self.config['model_type'] == 'AutoEncoder':
             get_AutoEncoder(self)
         else:
@@ -138,8 +144,12 @@ class Model:
 
         df_pred = self.data.df_y_pred.rename(columns={'label': 'predicted_label'})
         df_true = self.data.df_y_test.rename(columns={'label': 'true_label'})
+        if self.data.df_y_pred.shape[0] == self.data.df_y_pred_proba.shape[0]:
+            df_pred_proba = self.data.df_y_pred_proba.rename(columns={'label': 'probability'})
 
-        df_final_result = pd.concat([df_true, df_pred], axis=1)
+            df_final_result = pd.concat([df_true, df_pred, df_pred_proba], axis=1)
+        else:
+            df_final_result = pd.concat([df_true, df_pred], axis=1)
         df_final_result['is_correct'] = (df_final_result['true_label'] == df_final_result['predicted_label'])
         df_final_result.index.name = 'company_id_date'
 

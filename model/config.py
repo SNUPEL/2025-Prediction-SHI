@@ -13,7 +13,7 @@ def create_config():
     config['random_state'] = 42  # 랜덤 시드
 
     # 데이터 파일 및 보조 파일 경로 설정
-    config['data_file_path'] = '../data/사내협력사 현황(철수사&거래 협력사)_ Data_추가(250417)_데이터추가.xlsx'
+    config['data_file_path'] = '../data/사내협력사 현황(철수사&거래 협력사)_ Data_종합평가수정본.xlsx'
     config['sub_data_file_path'] = '../data/사내협력사 현황(철수사&거래 협력사)_출근인력(추가).xlsx'
 
     # 데이터 사용의 가장 이른 시작 시점 설정
@@ -22,13 +22,13 @@ def create_config():
     config['data_duration'] = 12
     # 예측하는 시점을 정의(해당 일자까지 데이터가 존재한다고 가정)
     # config['label_date'] = '2024-08-01'
-    config['label_date'] = '2023-03-01'
+    config['label_date'] = '2024-07-01'
     # 라벨 판단 기준에 필요한 길이
     config['label_duration'] = 3
     # True면 경/중 경을 포함하지 않음 (label이 True인 기간만 제외, False인 기간은 사용)
     config['severity_label_type'] = False
     # train, test 겹치는 기간 사용 여부
-    config['overlap'] = False
+    config['overlap'] = True
 
     # 데이터 로딩 시 제외할 시트 이름 목록
     # config['sheet_ban_list'] = ['경영 영향1', '경영 영향2', '종합평가', '입사자', '입사율', '퇴사율', '본공률(시급월급)',
@@ -45,14 +45,15 @@ def create_config():
     # 데이터 분석 및 가시화 그래프를 저장
     config['save_graph'] = False
 
-    # ML model: 'RandomForestClassifier', 'AdaBoostClassifier', 'ExtraTreesClassifier',
-    # 'RidgeClassifier', 'SGDClassifier', 'XGBClassifier', 'SVC', 'nuSVC'
-    # DL model: 'ConvLSTM', 'MultiChannelCNNLSTM', 'AutoEncoder'
-    config['model_type'] = 'ConvLSTM'  # 사용할 모델 타입
-    config['XAI'] = False  # True, False // 현재 ML 모델에 대해서만 구현
-
     # undersampling: None, tomek_link, ENN, nearmiss
     # oversampling: None, SMOTE, BorderlineSMOTE
+    config['sampling_order'] = ['oversampling', 'undersampling']
+
+    # ML model: 'RandomForestClassifier', 'AdaBoostClassifier', 'ExtraTreesClassifier',
+    # 'RidgeClassifier', 'SGDClassifier', 'XGBClassifier', 'SVC', 'nuSVC'
+    # DL model: 'AutoEncoder', 'ConvLSTM', 'MultiChannelCNNLSTM', 'ResNet', 'MLP_Mixer'
+    config['model_type'] = 'MLP_Mixer'  # 사용할 모델 타입
+    config['XAI'] = False  # True, False // 현재 ML 모델에 대해서만 구현
 
     model_config = {
         'RandomForestClassifier': {
@@ -216,22 +217,22 @@ def create_config():
             'back_end': 'tensorflow',
             'data_shape': 'matrix',
             'undersampling': 'ENN',
-            'ENN_parameter': {'sampling_strategy': 'auto', 'n_neighbors': 250},
+            'ENN_parameter': {'sampling_strategy': 'auto', 'n_neighbors': 10},
             'oversampling': 'TSSMOTE',
             'SMOTE_parameter': {'sampling_strategy': 0.5, 'k_neighbors': 30},
-            'TSSMOTE_parameter': {'sampling_strategy': 1, 'k_neighbors': 10},
+            'TSSMOTE_parameter': {'sampling_strategy': 0.2, 'k_neighbors': 10},
             'sub_window_size': 4,
             'model_parameter': {
                 'dropout_rate': 0.7,
                 'convlstm_layers': [
+                    {'filters': 64, 'kernel_width': 2, 'padding': "same", 'return_sequences': True, 'activation': 'relu'},
                     {'filters': 32, 'kernel_width': 2, 'padding': "same", 'return_sequences': True, 'activation': 'relu'},
-                    {'filters': 16, 'kernel_width': 2, 'padding': "same", 'return_sequences': True, 'activation': 'relu'},
-                    {'filters': 8, 'kernel_width': 2, 'padding': "same", 'return_sequences': True, 'activation': 'relu'}
+                    {'filters': 16, 'kernel_width': 2, 'padding': "same", 'return_sequences': True, 'activation': 'relu'}
                 ],
                 'bilstm_layers': [
+                    {'units': 32, 'return_sequences': True, 'activation': 'relu', 'l2_reg': 0.001},
                     {'units': 16, 'return_sequences': True, 'activation': 'relu', 'l2_reg': 0.001},
-                    {'units': 8, 'return_sequences': True, 'activation': 'relu', 'l2_reg': 0.001},
-                    {'units': 4, 'return_sequences': False, 'activation': 'relu', 'l2_reg': 0.001}
+                    {'units': 8, 'return_sequences': False, 'activation': 'relu', 'l2_reg': 0.001}
                 ],
                 'output_layer': {'units': 1, 'activation': 'sigmoid'}
             },
@@ -242,10 +243,10 @@ def create_config():
                 'metrics': ['accuracy', Recall()]
             },
             'fit_parameter': {
-                'epochs': 50,
+                'epochs': 100,
                 'batch_size': 64,
                 'validation_split': 0.1,
-                'class_weight': {0: 1, 1: 30},
+                'class_weight': {0: 1, 1: 10},
                 'shuffle': True
             },
             'threshold': 0.5
@@ -280,6 +281,70 @@ def create_config():
                 'epochs': 50,
                 'batch_size': 32,
                 'early_stopping_patience': 15
+            },
+            'threshold': 0.5
+        },
+
+        'ResNet': {
+            'back_end': 'tensorflow',
+            'data_shape': 'matrix',
+            'undersampling': 'ENN',
+            'ENN_parameter': {'sampling_strategy': 'auto', 'n_neighbors': 50},
+            'oversampling': 'TSSMOTE',
+            'SMOTE_parameter': {'sampling_strategy': 0.5, 'k_neighbors': 30},
+            'TSSMOTE_parameter': {'sampling_strategy': 0.5, 'k_neighbors': 10},
+            'model_parameter': {
+                'dropout_rate': 0.5,
+                'cnn_layers': [
+                    {'filters': 32, 'kernel_size': (3, 3), 'padding': "same"},
+                    {'filters': 64, 'kernel_size': (3, 3), 'padding': "same"},
+                    {'filters': 128, 'kernel_size': (3, 3), 'padding': "same"},
+                    {'filters': 256, 'kernel_size': (3, 3), 'padding': "same"}
+                ],
+                'output_layer': {'units': 1, 'activation': 'sigmoid'}
+                },
+            'compile_parameter': {
+                'learning_rate': 0.001,
+                'clipnorm': 1.0,
+                'loss': 'binary_crossentropy',
+                'metrics': ['accuracy', Recall()]
+            },
+            'fit_parameter': {
+                'epochs': 50,
+                'batch_size': 64,
+                'validation_split': 0.1,
+                'class_weight': {0: 1, 1: 30},
+                'shuffle': True
+            },
+            'threshold': 0.5
+        },
+
+        'MLP_Mixer': {
+            'back_end': 'tensorflow',
+            'data_shape': 'matrix',
+            'undersampling': 'ENN',
+            'ENN_parameter': {'sampling_strategy': 'auto', 'n_neighbors': 50},
+            'oversampling': 'TSSMOTE',
+            'SMOTE_parameter': {'sampling_strategy': 0.5, 'k_neighbors': 30},
+            'TSSMOTE_parameter': {'sampling_strategy': 0.5, 'k_neighbors': 30},
+            'model_parameter': {
+                'n_mixer_layers': 4,
+                'hidden_dim': 32,
+                'token_mlp_dim': 32,
+                'channel_mlp_dim': 32,
+                'output_layer': {'units': 1, 'activation': 'sigmoid'}
+            },
+            'compile_parameter': {
+                'learning_rate': 0.001,
+                'clipnorm': 1.0,
+                'loss': 'binary_crossentropy',
+                'metrics': ['accuracy']
+            },
+            'fit_parameter': {
+                'epochs': 15,
+                'batch_size': 64,
+                'shuffle': True,
+                'validation_split': 0.1
             },
             'threshold': 0.5
         }

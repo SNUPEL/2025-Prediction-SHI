@@ -37,6 +37,7 @@ class Data:
         self.name_train = list()
         self.name_test = list()
         self.df_y_pred = pd.DataFrame()
+        self.df_y_pred_proba = pd.DataFrame()
 
         self.df_x_train_flatten_after_sampling = pd.DataFrame()
         self.df_y_train_after_sampling = pd.DataFrame()
@@ -61,21 +62,21 @@ class Data:
             save_PCA_LDA(self, graph_name='after_split')
             print("==== 데이터 분할 후 PCA, LDA 분석 완료 ====\n")
 
-        if self.config['undersampling']:
-            print("\n==== 데이터 undersampling 적용 시작 ====")
-            apply_undersampling(self)
-            print("==== 데이터 undersampling 적용 완료 =====\n")
+        for sampling_order in self.config['sampling_order']:
+            if sampling_order == 'oversampling':
+                print("\n==== 데이터 oversampling 적용 시작 ====")
+                apply_oversampling(self)
+                print("==== 데이터 oversampling 적용 완료 =====\n")
+            elif sampling_order == 'undersampling':
+                print("\n==== 데이터 undersampling 적용 시작 ====")
+                apply_undersampling(self)
+                print("==== 데이터 undersampling 적용 완료 =====\n")
+                make_matrix_data(self)
 
-        if self.config['undersampling']:
-            make_matrix_data(self)
-
-        if self.config['oversampling']:
-            print("\n==== 데이터 oversampling 적용 시작 ====")
-            apply_oversampling(self)
-            print("==== 데이터 oversampling 적용 완료 ====\n")
-
-        # if self.config['undersampling'] or self.config['oversampling']:
-        #     make_matrix_data(self)
+        # if self.config['oversampling']:
+        #     print("\n==== 데이터 oversampling 적용 시작 ====")
+        #     apply_oversampling(self)
+        #     print("==== 데이터 oversampling 적용 완료 ====\n")
 
         if self.config['save_graph'] and (self.config['undersampling'] or self.config['oversampling']):
             print("\n==== 데이터 증강 후 PCA, LDA 분석 시작 ====")

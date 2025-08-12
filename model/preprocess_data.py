@@ -105,8 +105,12 @@ def split_data(self):
 
 
 def apply_undersampling(self):
-    x_train = self.df_x_train_flatten.copy()
-    y_train = self.df_y_train.copy()
+    if self.config['sampling_order'][0] == 'undersampling':
+        x_train = self.df_x_train_flatten.copy()
+        y_train = self.df_y_train.copy()
+    else:
+        x_train = self.df_x_train_flatten_after_sampling.copy()
+        y_train = self.df_y_train_after_sampling.copy()
 
     class_counts_before = y_train['label'].value_counts()
 
@@ -137,7 +141,7 @@ def apply_undersampling(self):
 
 def apply_oversampling(self):
     if self.config['oversampling'] in ['BorderlineSMOTE', 'SMOTE']:
-        if self.config['undersampling']:
+        if self.config['sampling_order'][0] == 'undersampling':
             x_train = self.df_x_train_flatten_after_sampling.copy()
             y_train = self.df_y_train_after_sampling.copy()
         else:
@@ -174,16 +178,10 @@ def apply_oversampling(self):
         self.df_train_after_sampling = pd.concat(
             [self.df_x_train_flatten_after_sampling, self.df_y_train_after_sampling], axis=1)
 
-        # class_counts_after = self.df_y_train_after_sampling['label'].value_counts()
-        # print(
-        #     f"  oversampling 적용 후 클래스 분포: 거래중={class_counts_after.get(False, 0)}, 경영악화={class_counts_after.get(True, 0)}")
-        # print(f"  oversampling 적용 완료: 원본 {len(x_train)}개 → 최종 {len(X_sampled)}개")
-        # print(f"  생성 된 데이터 수: {new_count}개")
-
         make_matrix_data(self)
 
     elif self.config['oversampling'] == 'TSSMOTE':
-        if self.config['undersampling']:
+        if self.config['sampling_order'][0] == 'undersampling':
             x_dict = self.df_x_train_matrix_dict_after_sampling
             y_dict = self.df_y_train_dict_after_sampling
         else:
