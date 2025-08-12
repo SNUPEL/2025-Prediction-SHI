@@ -22,7 +22,7 @@ def create_config():
     config['data_duration'] = 12
     # 예측하는 시점을 정의(해당 일자까지 데이터가 존재한다고 가정)
     # config['label_date'] = '2024-08-01'
-    config['label_date'] = '2024-07-01'
+    config['label_date'] = '2022-03-01'
     # 라벨 판단 기준에 필요한 길이
     config['label_duration'] = 3
     # True면 경/중 경을 포함하지 않음 (label이 True인 기간만 제외, False인 기간은 사용)
@@ -52,7 +52,7 @@ def create_config():
     # ML model: 'RandomForestClassifier', 'AdaBoostClassifier', 'ExtraTreesClassifier',
     # 'RidgeClassifier', 'SGDClassifier', 'XGBClassifier', 'SVC', 'nuSVC'
     # DL model: 'AutoEncoder', 'ConvLSTM', 'MultiChannelCNNLSTM', 'ResNet', 'MLP_Mixer'
-    config['model_type'] = 'MLP_Mixer'  # 사용할 모델 타입
+    config['model_type'] = 'nuSVC'  # 사용할 모델 타입
     config['XAI'] = False  # True, False // 현재 ML 모델에 대해서만 구현
 
     model_config = {
@@ -157,11 +157,11 @@ def create_config():
             'TSSMOTE_parameter': {'sampling_strategy': 0.5, 'k_neighbors': 30},
             'model_parameter': {
                 'probability': True,   # XAI 사용시 True
-                'C': 1.0,              # 규제 파라미터. 작을수록 규제가 강함
+                'C': 0.188609965,              # 규제 파라미터. 작을수록 규제가 강함
                 'kernel': 'rbf',       # 커널 종류 ('linear', 'rbf', 'poly', 'sigmoid')
                 'gamma': 'scale'       # 커널 계수 ('scale', 'auto' 또는 실수값)
             },
-            'class_weight': {0: 1, 1: 1000}
+            'class_weight': {0: 1, 1: 374}
         },
 
         'nuSVC': {
@@ -174,7 +174,7 @@ def create_config():
             'TSSMOTE_parameter': {'sampling_strategy': 0.5, 'k_neighbors': 30},
             'model_parameter': {
                 'probability': True,   # XAI 사용시 True
-                'nu': 0.1,
+                'nu': 0.01,
                 'kernel': 'rbf',       # 커널 종류 ('linear', 'rbf', 'poly', 'sigmoid')
                 'gamma': 'scale'       # 커널 계수 ('scale', 'auto' 또는 실수값)
             },
