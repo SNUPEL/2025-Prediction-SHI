@@ -4,6 +4,7 @@ from get_AdaBoostClassifier import *
 from get_AdaBoostClassifier_optimized import *
 from get_ExtraTreesClassifier import *
 from get_LinearClassifier import *
+from get_RidgeClassifier_optimized import *
 from get_XGBClassifier import *
 from get_SVC import *
 from get_ConvLSTM import *
@@ -69,6 +70,7 @@ class Model:
             get_ExtraTreesClassifier(self)
         elif self.config['model_type'] == 'RidgeClassifier':
             get_RidgeClassifier(self)
+            get_RidgeClassifier_optimized(self)
         elif self.config['model_type'] == 'SGDClassifier':
             get_SGDClassifier(self)
         elif self.config['model_type'] == 'XGBClassifier':
