@@ -16,7 +16,11 @@ def get_MLP_Mixer(self):
     else:
         X_train = np.array(list(self.data.df_x_train_matrix_dict.values()))
         y_train = np.array(list(self.data.df_y_train_dict.values()))
+    X_valid = np.array(list(self.data.df_x_valid_matrix_dict.values()))
+    y_valid = np.array(list(self.data.df_y_valid_dict.values()))
     X_test = np.array(list(self.data.df_x_test_matrix_dict.values()))
+
+    valid_set = (X_valid, y_valid)
 
     input_shape = X_train.shape[1:]
     n_features, n_timesteps = input_shape
@@ -65,7 +69,7 @@ def get_MLP_Mixer(self):
                        metrics=compile_params.get('metrics', ['accuracy']))
     self.model.summary()
 
-    history = self.model.fit(x=X_train, y=y_train, **self.config['fit_parameter'])
+    history = self.model.fit(x=X_train, y=y_train, validation_data=valid_set, **self.config['fit_parameter'])
     self.history = {
         'train_loss': history.history['loss'],
         'val_loss': history.history['val_loss'],

@@ -10,6 +10,7 @@ from get_SVC import *
 from get_SVC_optimized import *
 from get_ConvLSTM import *
 from get_MultiChannelCNNLSTM import *
+from get_Transformer import *
 from get_ResNet import *
 from get_MLP_Mixer import *
 from get_AutoEncoder import *
@@ -78,15 +79,17 @@ class Model:
         elif self.config['model_type'] == 'XGBClassifier':
             get_XGBClassifier(self)
         elif self.config['model_type'] == 'SVC':
-            # get_SVC(self)
-            get_SVC_optimized(self)
+            get_SVC(self)
+            # get_SVC_optimized(self)
         elif self.config['model_type'] == 'nuSVC':
-            # get_nuSVC(self)
-            get_nuSVC_optimized(self)
+            get_nuSVC(self)
+            # get_nuSVC_optimized(self)
         elif self.config['model_type'] == 'ConvLSTM':
             get_ConvLSTM(self)
         elif self.config['model_type'] == 'MultiChannelCNNLSTM':
             get_MultiChannelCNNLSTM(self)
+        elif self.config['model_type'] == 'Transformer':
+            get_Transformer(self)
         elif self.config['model_type'] == 'ResNet':
             get_ResNet(self)
         elif self.config['model_type'] == 'MLP_Mixer':
@@ -129,6 +132,35 @@ class Model:
             labels_df.to_csv(labels_csv_path, index=False, encoding='utf-8-sig')
             print(f"    총 {len(matrix_dict_to_save)}개 데이터 및 라벨 저장")
             print(f"==== 학습 데이터 저장 완료 ====")
+
+        if self.config['save_validation_data']:
+            print(f"==== 검증 데이터 저장 시작 ====")
+            matrix_dict_to_save = self.data.df_x_valid_matrix_dict
+            labels_dict_to_save = self.data.df_y_valid_dict
+
+            matrix_valid_folder_path = os.path.join(self.config['result_folder_path'], 'valid_data_matrix')
+            os.makedirs(matrix_valid_folder_path, exist_ok=True)
+
+            labels_data = []
+            for sample_name, df_sample in matrix_dict_to_save.items():
+                sample_label = labels_dict_to_save[sample_name]
+
+                file_name_excel = f"{sample_name}_label_{int(sample_label)}.xlsx"
+
+                df_sample.to_excel(os.path.join(matrix_valid_folder_path, file_name_excel), index=True)
+
+                labels_data.append({
+                    'filename': file_name_excel,
+                    'company_id_date': sample_name,
+                    'label': int(sample_label)
+                })
+
+            # 라벨 정보를 담은 CSV 파일 저장
+            labels_csv_path = os.path.join(matrix_valid_folder_path, 'valid_data_labels.csv')
+            labels_df = pd.DataFrame(labels_data)
+            labels_df.to_csv(labels_csv_path, index=False, encoding='utf-8-sig')
+            print(f"    총 {len(matrix_dict_to_save)}개 데이터 및 라벨 저장")
+            print(f"==== 검증 데이터 저장 완료 ====")
 
     def evaluate_model(self):
         evaluate_classifier(self)

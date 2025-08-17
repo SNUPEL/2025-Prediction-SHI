@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+from sklearn.model_selection import train_test_split
 from imblearn.over_sampling import SMOTE
 from imblearn.over_sampling import BorderlineSMOTE
 from imblearn.under_sampling import TomekLinks
@@ -69,16 +70,35 @@ def split_data(self):
         for i in range(self.config['data_duration']):
             self.flattened_column_names.append(f"{feature_name}_{i}")
 
+    train_indicies = range(len(temp_y_train))
+    train_idx, valid_idx = train_test_split(
+        train_indicies,
+        test_size=self.config['validation_ratio'],
+        random_state=self.config['random_state'],
+        stratify=temp_y_train
+    )
+
+    temp_X_valid = [temp_X_train[i] for i in valid_idx]
+    temp_y_valid = [temp_y_train[i] for i in valid_idx]
+    temp_name_valid = [temp_name_train[i] for i in valid_idx]
+    temp_X_train = [temp_X_train[i] for i in train_idx]
+    temp_y_train = [temp_y_train[i] for i in train_idx]
+    temp_name_train = [temp_name_train[i] for i in train_idx]
+
     # matrix 형태로 저장
     self.df_x_train_matrix_dict = {temp_name_train[i]: pd.DataFrame(temp_X_train[i], columns=range(temp_X_train[i].shape[1]), index=feature_names) for i in range(len(temp_name_train))}
     self.df_y_train_dict = {temp_name_train[i]: temp_y_train[i] for i in range(len(temp_name_train))}
+    self.df_x_valid_matrix_dict = {temp_name_valid[i]: pd.DataFrame(temp_X_valid[i], columns=range(temp_X_valid[i].shape[1]), index=feature_names) for i in range(len(temp_name_valid))}
+    self.df_y_valid_dict = {temp_name_valid[i]: temp_y_valid[i] for i in range(len(temp_name_valid))}
     self.df_x_test_matrix_dict = {temp_name_test[i]: pd.DataFrame(temp_X_test[i], columns=range(temp_X_test[i].shape[1]), index=feature_names) for i in range(len(temp_name_test))}
     self.df_y_test_dict = {temp_name_test[i]: temp_y_test[i] for i in range(len(temp_name_test))}
     self.df_train_dict = {key: (self.df_x_train_matrix_dict[key], self.df_y_train_dict[key]) for key in temp_name_train}
+    self.df_valid_dict = {key: (self.df_x_valid_matrix_dict[key], self.df_y_valid_dict[key]) for key in temp_name_valid}
     self.df_test_dict = {key: (self.df_x_test_matrix_dict[key], self.df_y_test_dict[key]) for key in temp_name_test}
 
     # 매트릭스 형태의 데이터를 평탄화하여 2D NumPy 배열로 변환
     flattened_X_train_list = []
+    flattened_X_valid_list = []
     flattened_X_test_list = []
 
     # 훈련 데이터 평탄화
@@ -86,6 +106,11 @@ def split_data(self):
         # Matrix (data_duration, num_features)를 1D 배열로 평탄화
         flattened_row = np.nan_to_num(matrix_data.flatten(), nan=0.0)
         flattened_X_train_list.append(flattened_row)
+
+    # 검증 데이터 평탄화
+    for matrix_data in temp_X_valid:
+        flattened_row = np.nan_to_num(matrix_data.flatten(), nan=0.0)
+        flattened_X_valid_list.append(flattened_row)
 
     # 테스트 데이터 평탄화
     for matrix_data in temp_X_test:
@@ -95,12 +120,16 @@ def split_data(self):
     # flatten 형태로 변환
     self.df_x_train_flatten = pd.DataFrame(flattened_X_train_list, columns=self.flattened_column_names, index=temp_name_train)
     self.df_y_train = pd.DataFrame(temp_y_train, columns=['label'], index=temp_name_train)
+    self.df_x_valid_flatten = pd.DataFrame(flattened_X_valid_list, columns=self.flattened_column_names, index=temp_name_valid)
+    self.df_y_valid = pd.DataFrame(temp_y_valid, columns=['label'], index=temp_name_valid)
     self.df_x_test_flatten = pd.DataFrame(flattened_X_test_list, columns=self.flattened_column_names, index=temp_name_test)
     self.df_y_test = pd.DataFrame(temp_y_test, columns=['label'], index=temp_name_test)
     self.df_train = pd.concat([self.df_x_train_flatten, self.df_y_train], axis=1)
+    self.df_valid = pd.concat([self.df_x_valid_flatten, self.df_y_valid], axis=1)
     self.df_test = pd.concat([self.df_x_test_flatten, self.df_y_test], axis=1)
 
     self.name_train = temp_name_train
+    self.name_valid = temp_name_valid
     self.name_test = temp_name_test
 
 

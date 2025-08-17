@@ -158,18 +158,21 @@ def get_MultiChannelCNNLSTM(self):
         x_dict = self.data.df_x_train_matrix_dict
         y_dict = self.data.df_y_train_dict
 
-        # 훈련 데이터: (샘플, 특성, 시간) 형태의 3D NumPy 배열로 변환
+    # 훈련 데이터: (샘플, 특성, 시간) 형태의 3D NumPy 배열로 변환
     X_train_3d = np.array([df.values for df in x_dict.values()])
     y_train = np.array(list(y_dict.values()))
+
+    # 검증 데이터
+    X_valid_3d = np.array([df.values for df in self.data.df_x_valid_matrix_dict.values()])
+    y_valid = np.array(list(self.df_y_valid_dict.values()))
 
     # 테스트 데이터
     X_test_3d = np.array([df.values for df in self.data.df_x_test_matrix_dict.values()])
 
     # MultiChannel 모델을 위한 4D 형태로 변환 (샘플, 채널=특성, 시간, 1)
     X_train = np.expand_dims(X_train_3d, axis=-1)
+    X_valid = np.expand_dims(X_valid_3d, axis=-1)
     X_test = np.expand_dims(X_test_3d, axis=-1)
-
-    print(f"최종 학습 데이터 형태: {X_train.shape}")
 
     # --- 2. PyTorch 학습 설정 ---
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -180,13 +183,22 @@ def get_MultiChannelCNNLSTM(self):
     # DataLoader 생성
     X_train_tensor = torch.FloatTensor(X_train)
     y_train_tensor = torch.FloatTensor(y_train).unsqueeze(1)
+    X_valid_tensor = torch.FloatTensor(X_valid)
+    y_valid_tensor = torch.FloatTensor(y_valid).unsqueeze(1)
     X_test_tensor = torch.FloatTensor(X_test)
 
     train_dataset = TensorDataset(X_train_tensor, y_train_tensor)
+    valid_dataset = TensorDataset(X_valid_tensor, y_valid_tensor)
+
     train_loader = DataLoader(
         train_dataset,
         batch_size=self.config['fit_parameter']['batch_size'],
         shuffle=True
+    )
+    valid_loader = DataLoader(
+        valid_dataset,
+        batch_size=self.config['fit_parameter']['batch_size'],
+        shuffle=False
     )
 
     model_params = self.config['model_parameter']
@@ -226,9 +238,13 @@ def get_MultiChannelCNNLSTM(self):
         model.eval()
         val_loss = 0.0
         with torch.no_grad():
-            outputs = model(X_test_tensor.to(device))
-            y_test_tensor = torch.FloatTensor(np.array(list(self.data.df_y_test_dict.values()))).unsqueeze(1).to(device)
-            val_loss = criterion(outputs, y_test_tensor).item()
+            # 🔑 valid_loader를 사용하여 배치 단위로 검증을 수행합니다.
+            for batch_X, batch_y in valid_loader:
+                batch_X, batch_y = batch_X.to(device), batch_y.to(device)
+                outputs = model(batch_X)
+                loss = criterion(outputs, batch_y)
+                val_loss += loss.item()
+        val_loss = val_loss / len(valid_loader)
         history['val_loss'].append(val_loss)
 
         print(f"Epoch {epoch + 1}/{fit_params['epochs']} - Train Loss: {avg_train_loss:.4f}, Val Loss: {val_loss:.4f}")

@@ -22,13 +22,15 @@ def create_config():
     config['data_duration'] = 12
     # 예측하는 시점을 정의(해당 일자까지 데이터가 존재한다고 가정)
     # config['label_date'] = '2024-08-01'
-    config['label_date'] = '2022-03-01'
+    config['label_date'] = '2023-03-01'
     # 라벨 판단 기준에 필요한 길이
     config['label_duration'] = 3
     # True면 경/중 경을 포함하지 않음 (label이 True인 기간만 제외, False인 기간은 사용)
     config['severity_label_type'] = False
     # train, test 겹치는 기간 사용 여부
     config['overlap'] = True
+    # validation set 비율 0~1
+    config['validation_ratio'] = 0.1
 
     # 데이터 로딩 시 제외할 시트 이름 목록
     # config['sheet_ban_list'] = ['경영 영향1', '경영 영향2', '종합평가', '입사자', '입사율', '퇴사율', '본공률(시급월급)',
@@ -47,12 +49,12 @@ def create_config():
 
     # undersampling: None, tomek_link, ENN, nearmiss
     # oversampling: None, SMOTE, BorderlineSMOTE
-    config['sampling_order'] = ['oversampling', 'undersampling']
+    config['sampling_order'] = []
 
     # ML model: 'RandomForestClassifier', 'AdaBoostClassifier', 'ExtraTreesClassifier',
     # 'RidgeClassifier', 'SGDClassifier', 'XGBClassifier', 'SVC', 'nuSVC'
-    # DL model: 'AutoEncoder', 'ConvLSTM', 'MultiChannelCNNLSTM', 'ResNet', 'MLP_Mixer'
-    config['model_type'] = 'nuSVC'  # 사용할 모델 타입
+    # DL model: 'ConvLSTM', 'MultiChannelCNNLSTM', 'Transformer', 'ResNet', 'MLP_Mixer', 'AutoEncoder'
+    config['model_type'] = 'Transformer'  # 사용할 모델 타입
     config['XAI'] = False  # True, False // 현재 ML 모델에 대해서만 구현
 
     model_config = {
@@ -207,8 +209,7 @@ def create_config():
             'fit_parameter': {
                 'epochs': 100,
                 'batch_size': 64,
-                'shuffle': True,
-                'validation_split': 0.2
+                'shuffle': True
             },
             'threshold_percentile': 97.5
         },
@@ -216,9 +217,9 @@ def create_config():
         'ConvLSTM': {
             'back_end': 'tensorflow',
             'data_shape': 'matrix',
-            'undersampling': 'ENN',
+            'undersampling': None,
             'ENN_parameter': {'sampling_strategy': 'auto', 'n_neighbors': 10},
-            'oversampling': 'TSSMOTE',
+            'oversampling': None,
             'SMOTE_parameter': {'sampling_strategy': 0.5, 'k_neighbors': 30},
             'TSSMOTE_parameter': {'sampling_strategy': 0.2, 'k_neighbors': 10},
             'sub_window_size': 4,
@@ -243,9 +244,8 @@ def create_config():
                 'metrics': ['accuracy', Recall()]
             },
             'fit_parameter': {
-                'epochs': 100,
+                'epochs': 10,
                 'batch_size': 64,
-                'validation_split': 0.1,
                 'class_weight': {0: 1, 1: 10},
                 'shuffle': True
             },
@@ -285,12 +285,44 @@ def create_config():
             'threshold': 0.5
         },
 
+        'Transformer': {
+            'back_end': 'tensorflow',
+            'data_shape': 'matrix',
+            'undersampling': None,
+            'ENN_parameter': {'sampling_strategy': 'auto', 'n_neighbors': 50},
+            'oversampling': None,
+            'SMOTE_parameter': {'sampling_strategy': 0.5, 'k_neighbors': 30},
+            'TSSMOTE_parameter': {'sampling_strategy': 0.5, 'k_neighbors': 10},
+            'model_parameter': {
+                'embed_dim': 64,         # 각 타임스텝의 피처를 임베딩할 차원
+                'num_blocks': 2,         # 쌓을 Transformer Encoder Block의 수
+                'num_heads': 4,          # Multi-Head Attention의 헤드 수
+                'ff_dim': 128,           # Encoder Block 내부 피드포워드 신경망의 차원
+                'dropout_rate': 0.1,
+                'output_layer': {'units': 1, 'activation': 'sigmoid'}
+            },
+            'compile_parameter': {
+                'learning_rate': 0.001,
+                'weight_decay': 0.01,
+                'loss': 'binary_crossentropy',
+                'metrics': ['accuracy', Recall(name='recall')]  # Recall 메트릭 추가
+            },
+            'fit_parameter': {
+                'epochs': 10,
+                'batch_size': 64,
+                'class_weight': {0: 1, 1: 10},
+                'shuffle': True
+                # callbacks 추가 구현 필요
+            },
+            'threshold': 0.5
+        },
+
         'ResNet': {
             'back_end': 'tensorflow',
             'data_shape': 'matrix',
-            'undersampling': 'ENN',
+            'undersampling': None,
             'ENN_parameter': {'sampling_strategy': 'auto', 'n_neighbors': 50},
-            'oversampling': 'TSSMOTE',
+            'oversampling': None,
             'SMOTE_parameter': {'sampling_strategy': 0.5, 'k_neighbors': 30},
             'TSSMOTE_parameter': {'sampling_strategy': 0.5, 'k_neighbors': 10},
             'model_parameter': {
@@ -310,9 +342,8 @@ def create_config():
                 'metrics': ['accuracy', Recall()]
             },
             'fit_parameter': {
-                'epochs': 50,
+                'epochs': 10,
                 'batch_size': 64,
-                'validation_split': 0.1,
                 'class_weight': {0: 1, 1: 30},
                 'shuffle': True
             },
@@ -322,12 +353,13 @@ def create_config():
         'MLP_Mixer': {
             'back_end': 'tensorflow',
             'data_shape': 'matrix',
-            'undersampling': 'ENN',
+            'undersampling': None,
             'ENN_parameter': {'sampling_strategy': 'auto', 'n_neighbors': 50},
-            'oversampling': 'TSSMOTE',
+            'oversampling': None,
             'SMOTE_parameter': {'sampling_strategy': 0.5, 'k_neighbors': 30},
             'TSSMOTE_parameter': {'sampling_strategy': 0.5, 'k_neighbors': 30},
             'model_parameter': {
+                'dropout_rate': 0.5,
                 'n_mixer_layers': 4,
                 'hidden_dim': 32,
                 'token_mlp_dim': 32,
@@ -341,10 +373,9 @@ def create_config():
                 'metrics': ['accuracy']
             },
             'fit_parameter': {
-                'epochs': 15,
+                'epochs': 5,
                 'batch_size': 64,
-                'shuffle': True,
-                'validation_split': 0.1
+                'shuffle': True
             },
             'threshold': 0.5
         }
@@ -365,6 +396,7 @@ def create_config():
     # 학습된 모델 저장 여부 설정
     config['save_model'] = False  # 추가 구현 필요
     config['save_train_data'] = False
+    config['save_validation_data'] = False
     config['save_test_data'] = False
     config['save_confusion_matrix'] = True  # 혼동 행렬 저장 여부
     config['save_loss_history'] = True

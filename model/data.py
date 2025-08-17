@@ -21,20 +21,27 @@ class Data:
 
         self.df_x_train_matrix_dict = dict()
         self.df_y_train_dict = dict()
+        self.df_x_valid_matrix_dict = dict()
+        self.df_y_valid_dict = dict()
         self.df_x_test_matrix_dict = dict()
         self.df_y_test_dict = dict()
         self.df_train_dict = dict()
+        self.df_valid_dict = dict()
         self.df_test_dict = dict()
         self.df_y_pred_dict = dict()
 
         self.df_x_train_flatten = pd.DataFrame()
         self.df_y_train = pd.DataFrame()
+        self.df_x_valid_flatten = pd.DataFrame()
+        self.df_y_valid = pd.DataFrame()
         self.df_x_test_flatten = pd.DataFrame()
         self.df_y_test = pd.DataFrame()
         self.df_train = pd.DataFrame()
+        self.df_valid = pd.DataFrame()
         self.df_test = pd.DataFrame()
         self.flattened_column_names = list()
         self.name_train = list()
+        self.name_valid = list()
         self.name_test = list()
         self.df_y_pred = pd.DataFrame()
         self.df_y_pred_proba = pd.DataFrame()
@@ -63,11 +70,11 @@ class Data:
             print("==== 데이터 분할 후 PCA, LDA 분석 완료 ====\n")
 
         for sampling_order in self.config['sampling_order']:
-            if sampling_order == 'oversampling':
+            if sampling_order == 'oversampling' and self.config['oversampling']:
                 print("\n==== 데이터 oversampling 적용 시작 ====")
                 apply_oversampling(self)
                 print("==== 데이터 oversampling 적용 완료 =====\n")
-            elif sampling_order == 'undersampling':
+            elif sampling_order == 'undersampling' and self.config['undersampling']:
                 print("\n==== 데이터 undersampling 적용 시작 ====")
                 apply_undersampling(self)
                 print("==== 데이터 undersampling 적용 완료 =====\n")
