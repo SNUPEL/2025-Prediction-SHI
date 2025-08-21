@@ -54,7 +54,7 @@ def create_config():
     # ML model: 'RandomForestClassifier', 'AdaBoostClassifier', 'ExtraTreesClassifier',
     # 'RidgeClassifier', 'SGDClassifier', 'XGBClassifier', 'SVC', 'nuSVC'
     # DL model: 'ConvLSTM', 'MultiChannelCNNLSTM', 'Transformer', 'ResNet', 'MLP_Mixer', 'AutoEncoder'
-    config['model_type'] = 'Transformer'  # 사용할 모델 타입
+    config['model_type'] = 'VotingClassifier'  # 사용할 모델 타입
     config['XAI'] = False  # True, False // 현재 ML 모델에 대해서만 구현
 
     model_config = {
@@ -179,6 +179,41 @@ def create_config():
                 'nu': 0.01,
                 'kernel': 'rbf',       # 커널 종류 ('linear', 'rbf', 'poly', 'sigmoid')
                 'gamma': 'scale'       # 커널 계수 ('scale', 'auto' 또는 실수값)
+            },
+            'class_weight': {0: 1, 1: 1000}
+        },
+
+        'VotingClassifier': {
+            'back_end': 'sklearn',
+            'data_shape': 'flatten',
+            'undersampling': 'ENN',
+            'ENN_parameter': {'sampling_strategy': 'auto', 'n_neighbors': 200},
+            'oversampling': 'TSSMOTE',
+            'SMOTE_parameter': {'sampling_strategy': 0.5, 'k_neighbors': 30},
+            'TSSMOTE_parameter': {'sampling_strategy': 0.5, 'k_neighbors': 30},
+            'SVC_parameter': {
+                'probability': True,  # XAI 사용시 True
+                'C': 0.188609965,  # 규제 파라미터. 작을수록 규제가 강함
+                'kernel': 'rbf',  # 커널 종류 ('linear', 'rbf', 'poly', 'sigmoid')
+                'gamma': 'scale'  # 커널 계수 ('scale', 'auto' 또는 실수값)
+            },
+            'nuSVC_parameter': {
+                'probability': True,  # XAI 사용시 True
+                'nu': 0.01,
+                'kernel': 'rbf',  # 커널 종류 ('linear', 'rbf', 'poly', 'sigmoid')
+                'gamma': 'scale'  # 커널 계수 ('scale', 'auto' 또는 실수값)
+            },
+            'RidgeClassifier_parameter': {
+                'alpha': 1.0,  # 규제 강도
+                'solver': 'auto',  # 계산 알고리즘
+                'tol': 1e-4  # 중단 기준 정밀도
+            },
+            'AdaBoostClassifier_parameter': {'n_estimators': 1000, "learning_rate": 0.001},
+            'model_parameter': {
+                'voting': 'hard',   # voting 수준: 소프트 보팅(soft)/하드 보팅(hard)
+                'weights': [1, 1, 1, 1],   # estimator 가중치
+                'n_jobs': None,       # 커널 종류 ('linear', 'rbf', 'poly', 'sigmoid')
+                'flatten_transform': True       # voting이 soft일 때만 사용, transform output에 영향을 미치는 요소
             },
             'class_weight': {0: 1, 1: 1000}
         },
