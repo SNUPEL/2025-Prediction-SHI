@@ -22,7 +22,7 @@ def create_config():
     config['data_duration'] = 12
     # 예측하는 시점을 정의(해당 일자까지 데이터가 존재한다고 가정)
     # config['label_date'] = '2024-08-01'
-    config['label_date'] = '2023-03-01'
+    config['label_date'] = '2024-07-01'
     # 라벨 판단 기준에 필요한 길이
     config['label_duration'] = 3
     # True면 경/중 경을 포함하지 않음 (label이 True인 기간만 제외, False인 기간은 사용)
@@ -36,7 +36,7 @@ def create_config():
     # config['sheet_ban_list'] = ['경영 영향1', '경영 영향2', '종합평가', '입사자', '입사율', '퇴사율', '본공률(시급월급)',
     #                             '4대보험 가입자', '본공률(4대보험)', '안전사고 건수(중간, 낮음)', '안전사고 건수(높음)',
     #                             '공수능률',  '시급,월급제 인원', '투입인원', '환산능률']
-    config['sheet_ban_list'] = ['경영 영향1', '경영 영향2', '종합평가', '본공률(4대보험)', '본공률(시급월급)',
+    config['sheet_ban_list'] = ['경영 영향1', '경영 영향2', '종합평가', '본공률(4대보험)', '본공률(시급월급)', '시급,월급제 인원',
                                 '4대보험 가입자', '안전사고 건수(중간, 낮음)', '안전사고 건수(높음)']
 
     # 정규화: None, standard
@@ -52,7 +52,7 @@ def create_config():
     config['sampling_order'] = []
 
     # ML model: 'RandomForestClassifier', 'AdaBoostClassifier', 'ExtraTreesClassifier',
-    # 'RidgeClassifier', 'SGDClassifier', 'XGBClassifier', 'SVC', 'nuSVC'
+    # 'RidgeClassifier', 'SGDClassifier', 'XGBClassifier', 'SVC', 'nuSVC', 'VotingClassifier'
     # DL model: 'ConvLSTM', 'MultiChannelCNNLSTM', 'Transformer', 'ResNet', 'MLP_Mixer', 'AutoEncoder'
     config['model_type'] = 'VotingClassifier'  # 사용할 모델 타입
     config['XAI'] = False  # True, False // 현재 ML 모델에 대해서만 구현
@@ -193,7 +193,7 @@ def create_config():
             'TSSMOTE_parameter': {'sampling_strategy': 0.5, 'k_neighbors': 30},
             'SVC_parameter': {
                 'probability': True,  # XAI 사용시 True
-                'C': 0.188609965,  # 규제 파라미터. 작을수록 규제가 강함
+                'C': 0.1,  # 규제 파라미터. 작을수록 규제가 강함
                 'kernel': 'rbf',  # 커널 종류 ('linear', 'rbf', 'poly', 'sigmoid')
                 'gamma': 'scale'  # 커널 계수 ('scale', 'auto' 또는 실수값)
             },
@@ -203,16 +203,16 @@ def create_config():
                 'kernel': 'rbf',  # 커널 종류 ('linear', 'rbf', 'poly', 'sigmoid')
                 'gamma': 'scale'  # 커널 계수 ('scale', 'auto' 또는 실수값)
             },
+            'AdaBoostClassifier_parameter': {'n_estimators': 1000, "learning_rate": 0.001},
             'RidgeClassifier_parameter': {
-                'alpha': 1.0,  # 규제 강도
+                'alpha': 0.978892658777735,  # 규제 강도
                 'solver': 'auto',  # 계산 알고리즘
                 'tol': 1e-4  # 중단 기준 정밀도
             },
-            'AdaBoostClassifier_parameter': {'n_estimators': 1000, "learning_rate": 0.001},
             'model_parameter': {
                 'voting': 'hard',   # voting 수준: 소프트 보팅(soft)/하드 보팅(hard)
-                'weights': [1, 1, 1, 1],   # estimator 가중치
-                'n_jobs': None,       # 커널 종류 ('linear', 'rbf', 'poly', 'sigmoid')
+                'weights': [2, 3, 3, 5],   # estimator 가중치, SVC-nuSVC-AdaBoost-Ridge 순서
+                'n_jobs': None,       # 사용할 cpu 코어 개수
                 'flatten_transform': True       # voting이 soft일 때만 사용, transform output에 영향을 미치는 요소
             },
             'class_weight': {0: 1, 1: 1000}

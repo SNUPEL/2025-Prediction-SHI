@@ -37,7 +37,7 @@ def get_VotingClassifier(self, voting):
         ('adaboost', adaboost),
         ('ridge', ridge)
                                 ],
-        weights=[1, 1, 1, 2],
+        weights=self.config['model_parameter']['weights'],
         voting=voting).fit(self.data.df_x_train_flatten, self.data.df_y_train['label'])
 
     self.data.df_y_pred = pd.DataFrame(
