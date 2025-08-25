@@ -22,7 +22,7 @@ def create_config():
     config['data_duration'] = 12
     # 예측하는 시점을 정의(해당 일자까지 데이터가 존재한다고 가정)
     # config['label_date'] = '2024-08-01'
-    config['label_date'] = '2023-03-01'
+    config['label_date'] = '2024-03-01'
     # 라벨 판단 기준에 필요한 길이
     config['label_duration'] = 3
     # True면 경/중 경을 포함하지 않음 (label이 True인 기간만 제외, False인 기간은 사용)
@@ -49,7 +49,7 @@ def create_config():
 
     # undersampling: None, tomek_link, ENN, nearmiss
     # oversampling: None, SMOTE, BorderlineSMOTE
-    config['sampling_order'] = []
+    config['sampling_order'] = ['undersampling', 'oversampling']
 
     # ML model: 'RandomForestClassifier', 'AdaBoostClassifier', 'ExtraTreesClassifier',
     # 'RidgeClassifier', 'SGDClassifier', 'XGBClassifier', 'SVC', 'nuSVC'
@@ -288,16 +288,16 @@ def create_config():
         'Transformer': {
             'back_end': 'tensorflow',
             'data_shape': 'matrix',
-            'undersampling': None,
-            'ENN_parameter': {'sampling_strategy': 'auto', 'n_neighbors': 50},
-            'oversampling': None,
-            'SMOTE_parameter': {'sampling_strategy': 0.5, 'k_neighbors': 30},
-            'TSSMOTE_parameter': {'sampling_strategy': 0.5, 'k_neighbors': 10},
+            'undersampling': 'ENN',
+            'ENN_parameter': {'sampling_strategy': 'auto', 'n_neighbors': 201},
+            'oversampling': 'Borderline-TSSMOTE', #Borderline-TSSMOTE,TSSMOTE,SMOTE
+            'SMOTE_parameter': {'sampling_strategy': 1.0, 'k_neighbors': 5},
+            'TSSMOTE_parameter': {'sampling_strategy': 1.0, 'k_neighbors':15},
             'model_parameter': {
-                'embed_dim': 64,         # 각 타임스텝의 피처를 임베딩할 차원
-                'num_blocks': 2,         # 쌓을 Transformer Encoder Block의 수
-                'num_heads': 4,          # Multi-Head Attention의 헤드 수
-                'ff_dim': 128,           # Encoder Block 내부 피드포워드 신경망의 차원
+                'embed_dim': 128,         # 각 타임스텝의 피처를 임베딩할 차원
+                'num_blocks': 4,         # 쌓을 Transformer Encoder Block의 수
+                'num_heads': 8,          # Multi-Head Attention의 헤드 수
+                'ff_dim': 256,           # Encoder Block 내부 피드포워드 신경망의 차원
                 'dropout_rate': 0.1,
                 'output_layer': {'units': 1, 'activation': 'sigmoid'}
             },
@@ -310,7 +310,7 @@ def create_config():
             'fit_parameter': {
                 'epochs': 10,
                 'batch_size': 64,
-                'class_weight': {0: 1, 1: 10},
+                'class_weight': {0: 1, 1: 1},
                 'shuffle': True
                 # callbacks 추가 구현 필요
             },

@@ -167,9 +167,17 @@ def apply_undersampling(self):
     print(f"  undersampling 적용 완료: 원본 {y_train.shape[0]}개 → 최종 {self.df_y_train_after_sampling.shape[0]}개")
     print(f"  제거된 데이터 수: {y_train.shape[0] - self.df_y_train_after_sampling.shape[0]}개")
 
-
 def apply_oversampling(self):
+    """
+    설정에 따라 세 가지 오버샘플링 방식 중 하나를 선택하여 적용합니다.
+    1. 'SMOTE' / 'BorderlineSMOTE': 평탄화된 데이터에 적용 (비교 실험용)
+    2. 'TSSMOTE': 시계열 데이터 구조를 유지하며 오버샘플링 (표준 방식)
+    3. 'Borderline-TSSMOTE': TSSMOTE를 경계선 데이터에 집중하여 고도화 (추천 방식)
+    """
+
+    # --- 1. 표준 SMOTE / BorderlineSMOTE 로직 ---
     if self.config['oversampling'] in ['BorderlineSMOTE', 'SMOTE']:
+        print(f"\n==== '{self.config['oversampling']}' 오버샘플링 시작 (평탄화 데이터 기반) ====")
         if self.config['sampling_order'][0] == 'undersampling':
             x_train = self.df_x_train_flatten_after_sampling.copy()
             y_train = self.df_y_train_after_sampling.copy()
@@ -178,117 +186,126 @@ def apply_oversampling(self):
             y_train = self.df_y_train.copy()
 
         class_counts_before = y_train['label'].value_counts()
+        print(f"  오버샘플링 적용 전: 거래중={class_counts_before.get(False, 0)}, 경영악화={class_counts_before.get(True, 0)}")
 
-        # 클래스 불균형 확인
-        print(f"  총 훈련 데이터: {y_train.shape[0]}개")
-        print(
-            f"  oversampling 적용 전 클래스 분포: 거래중={class_counts_before.get(False, 0)}, 경영악화={class_counts_before.get(True, 0)}")
+        if self.config['oversampling'] == 'SMOTE':
+            sampler = SMOTE(**self.config.get('SMOTE_parameter', {}), random_state=self.config['random_state'])
+        else:  # BorderlineSMOTE
+            sampler = BorderlineSMOTE(**self.config.get('BorderlineSMOTE_parameter', {}),
+                                      random_state=self.config['random_state'])
 
-        if self.config['oversampling'] == 'SMOTE':  # 일반 SMOTE
-            sampler = SMOTE(**self.config['SMOTE_parameter'],
-                            random_state=self.config['random_state'])
-        else:
-            sampler = BorderlineSMOTE(sampling_strategy='auto', k_neighbors=self.config.get('SMOTE_k_neighbors', 5),
-                                      kind='borderline-1', random_state=self.config['random_state'])
+        X_sampled, y_sampled = sampler.fit_resample(x_train, y_train['label'])
 
-        X_sampled, y_sampled = sampler.fit_resample(x_train, y_train)
+        # DataFrame으로 변환
+        X_sampled = pd.DataFrame(X_sampled, columns=x_train.columns)
+        y_sampled = pd.DataFrame(y_sampled, columns=['label'])
 
+        # 인덱스 재설정
         new_count = len(X_sampled) - len(x_train)
         if new_count > 0:
             synthetic_names = [f"synthetic_{i + 1}" for i in range(new_count)]
             new_index = list(x_train.index) + synthetic_names
             X_sampled.index = new_index
             y_sampled.index = new_index
-            self.df_x_train_flatten_after_sampling = X_sampled
-            self.df_y_train_after_sampling = y_sampled
-        else:
-            self.df_x_train_flatten_after_sampling = x_train
-            self.df_y_train_after_sampling = y_train
+
+        self.df_x_train_flatten_after_sampling = X_sampled
+        self.df_y_train_after_sampling = y_sampled
         self.df_train_after_sampling = pd.concat(
             [self.df_x_train_flatten_after_sampling, self.df_y_train_after_sampling], axis=1)
 
-        make_matrix_data(self)
+        make_matrix_data(self)  # 매트릭스 데이터 재생성
 
-    elif self.config['oversampling'] == 'TSSMOTE':
+    # --- 2. TSSMOTE / Borderline-TSSMOTE 로직 ---
+    elif 'TSSMOTE' in self.config['oversampling']:
+        is_borderline = 'Borderline' in self.config['oversampling']
+        method_name = "Borderline-TSSMOTE" if is_borderline else "TSSMOTE"
+        print(f"\n==== '{method_name}' 오버샘플링 시작 (시계열 데이터 기반) ====")
+
         if self.config['sampling_order'][0] == 'undersampling':
-            x_dict = self.df_x_train_matrix_dict_after_sampling
-            y_dict = self.df_y_train_dict_after_sampling
+            x_dict, y_dict = self.df_x_train_matrix_dict_after_sampling, self.df_y_train_dict_after_sampling
         else:
-            x_dict = self.df_x_train_matrix_dict.copy()
-            y_dict = self.df_y_train_dict.copy()
+            x_dict, y_dict = self.df_x_train_matrix_dict.copy(), self.df_y_train_dict.copy()
 
         class_counts_before = pd.Series(y_dict).value_counts()
-        print(f"  총 훈련 데이터: {len(y_dict)}개")
-        print(
-            f"  oversampling 적용 전 클래스 분포: 거래중={class_counts_before.get(False, 0)}, 경영악화={class_counts_before.get(True, 0)}")
+        print(f"  오버샘플링 적용 전: 거래중={class_counts_before.get(False, 0)}, 경영악화={class_counts_before.get(True, 0)}")
 
-        minority_keys = [key for key, label in y_dict.items() if label]
+        tssmote_params = self.config.get('TSSMOTE_parameter', {})
+        k_neighbors = tssmote_params.get('k_neighbors', 5)
 
-        tssmote_params = self.config['TSSMOTE_parameter']
+        all_keys = list(x_dict.keys())
+        minority_keys = {key for key, label in y_dict.items() if label}
+        majority_keys = {key for key, label in y_dict.items() if not label}
 
-        if not minority_keys or len(minority_keys) <= tssmote_params['k_neighbors']:
-            print("경고: 소수 클래스 샘플이 부족하여 TSSMOTE를 적용할 수 없습니다.")
-            return x_dict, y_dict
+        if not minority_keys or len(all_keys) <= k_neighbors:
+            print("경고: 샘플 수가 부족하여 TSSMOTE 계열 오버샘플링을 적용할 수 없습니다.");
+            return
 
-        minority_x_list = [x_dict[key].values for key in minority_keys]
-        dist_matrix = dtw.distance_matrix(minority_x_list, use_c=True, parallel=True)
+        base_minority_keys = list(minority_keys)
 
-        majority_count = len([key for key, label in y_dict.items() if not label])
-        num_synthetic_samples = int(majority_count * tssmote_params['sampling_strategy'] - len(minority_keys))
+        # Borderline-TSSMOTE일 경우에만 경계선 샘플 식별
+        if is_borderline:
+            all_x_list = [x_dict[key].values for key in all_keys]
+            print(f"    {method_name}: 전체 샘플 간 DTW 거리 계산 중 (시간 소요)...")
+            full_dist_matrix = dtw.distance_matrix(all_x_list, use_c=True, parallel=True)
+
+            borderline_keys = []
+            print(f"    {method_name}: {k_neighbors}개의 이웃을 확인하여 경계선 샘플 식별 중...")
+            for i, key in enumerate(all_keys):
+                if key in minority_keys:
+                    neighbor_indices = np.argsort(full_dist_matrix[i])[1:k_neighbors + 1]
+                    majority_neighbor_count = sum(1 for idx in neighbor_indices if all_keys[idx] in majority_keys)
+                    if majority_neighbor_count > 0:
+                        borderline_keys.append(key)
+            print(f"    {method_name}: 총 {len(minority_keys)}개 소수 샘플 중 {len(borderline_keys)}개의 경계선 샘플 발견.")
+
+            if len(borderline_keys) > k_neighbors:
+                base_minority_keys = borderline_keys
+            else:
+                print("    경고: 경계선 샘플이 부족하여 표준 TSSMOTE 방식으로 대체합니다.")
+
+        # 샘플링 수행
+        base_minority_x_list = [x_dict[key].values for key in base_minority_keys]
+        minority_dist_matrix = dtw.distance_matrix(base_minority_x_list, use_c=True, parallel=True)
+
+        num_synthetic = int(len(majority_keys) * tssmote_params.get('sampling_strategy', 1.0)) - len(minority_keys)
         new_samples = []
 
-        for i in range(num_synthetic_samples):
-            sample_idx = np.random.randint(0, len(minority_keys))
-            distances = dist_matrix[sample_idx]
-            neighbor_indices = np.argsort(distances)[1:tssmote_params['k_neighbors'] + 1]
-            chosen_neighbor_idx = np.random.choice(neighbor_indices)
+        if num_synthetic > 0:
+            print(f"    {method_name}: {num_synthetic}개의 새로운 시계열 데이터 생성 중...")
+            for _ in range(num_synthetic):
+                sample_idx = np.random.randint(0, len(base_minority_keys))
+                distances = minority_dist_matrix[sample_idx]
+                neighbor_indices = np.argsort(distances)[1:k_neighbors + 1]
+                chosen_neighbor_idx = np.random.choice(neighbor_indices)
+                base_sample = base_minority_x_list[sample_idx]
+                neighbor_sample = base_minority_x_list[chosen_neighbor_idx]
+                synthetic_sample = base_sample + np.random.random() * (neighbor_sample - base_sample)
+                new_samples.append(synthetic_sample)
 
-            base_sample = minority_x_list[sample_idx]
-            neighbor_sample = minority_x_list[chosen_neighbor_idx]
+        x_resampled, y_resampled = x_dict.copy(), y_dict.copy()
+        feat_names = list(x_dict[list(minority_keys)[0]].index)
+        for i, data in enumerate(new_samples):
+            key = f"synthetic_{i}";
+            x_resampled[key] = pd.DataFrame(data, index=feat_names);
+            y_resampled[key] = True
 
-            w = np.random.random()
-            synthetic_sample = base_sample + w * (neighbor_sample - base_sample)
-            new_samples.append(synthetic_sample)
+        self.df_x_train_matrix_dict_after_sampling, self.df_y_train_dict_after_sampling = x_resampled, y_resampled
+        self.df_train_dict_after_sampling = {k: (x_resampled[k], y_resampled[k]) for k in x_resampled}
 
-        x_resampled_dict = x_dict.copy()
-        y_resampled_dict = y_dict.copy()
+        flat_data, labels, new_idx = [], [], []
+        for name, matrix in x_resampled.items():
+            flat_data.append(matrix.values.flatten());
+            labels.append(y_resampled[name]);
+            new_idx.append(name)
+        self.df_x_train_flatten_after_sampling = pd.DataFrame(flat_data, index=new_idx,
+                                                              columns=self.flattened_column_names)
+        self.df_y_train_after_sampling = pd.DataFrame(labels, index=new_idx, columns=['label'])
+        self.df_train_after_sampling = pd.concat(
+            [self.df_x_train_flatten_after_sampling, self.df_y_train_after_sampling], axis=1)
 
-        original_feature_names = list(x_dict[minority_keys[0]].index)
-        for i, synthetic_data in enumerate(new_samples):
-            new_key = f"synthetic_{i}"
-            df_synthetic = pd.DataFrame(synthetic_data, index=original_feature_names)
-            x_resampled_dict[new_key] = df_synthetic
-            y_resampled_dict[new_key] = True
-
-        self.df_x_train_matrix_dict_after_sampling = x_resampled_dict
-        self.df_y_train_dict_after_sampling = y_resampled_dict
-        self.df_train_dict_after_sampling = {key: (x_resampled_dict[key], y_resampled_dict[key]) for key in x_resampled_dict}
-
-        flattened_data = []
-        labels = []
-        new_index = []
-
-        feature_names = self.flattened_column_names
-
-        for name, df_matrix in x_resampled_dict.items():
-            flattened_data.append(df_matrix.values.flatten())
-            labels.append(y_resampled_dict[name])
-            new_index.append(name)
-
-        self.df_x_train_flatten_after_sampling = pd.DataFrame(flattened_data, index=new_index, columns=feature_names)
-        self.df_y_train_after_sampling = pd.DataFrame(labels, index=new_index, columns=['label'])
-        self.df_train_after_sampling = pd.concat([self.df_x_train_flatten_after_sampling, self.df_y_train_after_sampling], axis=1)
-
-    final_y = self.df_y_train_after_sampling['label']
-    class_counts_after = final_y.value_counts()
-
-    original_count = class_counts_before.sum()
-    final_count = len(final_y)
-    new_count = final_count - original_count
-    print(f"  oversampling 적용 후 클래스 분포: 거래중={class_counts_after.get(False, 0)}, 경영악화={class_counts_after.get(True, 0)}")
-    print(f"  oversampling 적용 완료: 원본 {original_count}개 → 최종 {final_count}개")
-    print(f"  생성 된 데이터 수: {new_count}개")
-
+    # --- 최종 결과 출력 ---
+    class_counts_after = self.df_y_train_after_sampling['label'].value_counts()
+    print(f"  오버샘플링 적용 후: 거래중={class_counts_after.get(False, 0)}, 경영악화={class_counts_after.get(True, 0)}")
 
 def make_matrix_data(self):
     df_x_train_after_sampling = self.df_x_train_flatten_after_sampling
