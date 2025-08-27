@@ -36,7 +36,7 @@ def create_config():
     # config['sheet_ban_list'] = ['경영 영향1', '경영 영향2', '종합평가', '입사자', '입사율', '퇴사율', '본공률(시급월급)',
     #                             '4대보험 가입자', '본공률(4대보험)', '안전사고 건수(중간, 낮음)', '안전사고 건수(높음)',
     #                             '공수능률',  '시급,월급제 인원', '투입인원', '환산능률']
-    config['sheet_ban_list'] = ['경영 영향1', '경영 영향2', '종합평가', '본공률(4대보험)', '본공률(시급월급)',
+    config['sheet_ban_list'] = ['경영 영향1', '경영 영향2', '종합평가', '본공률(4대보험)', '본공률(시급월급)', '시급,월급제 인원',
                                 '4대보험 가입자', '안전사고 건수(중간, 낮음)', '안전사고 건수(높음)']
 
     # 정규화: None, standard
@@ -52,9 +52,9 @@ def create_config():
     config['sampling_order'] = ['undersampling', 'oversampling']
 
     # ML model: 'RandomForestClassifier', 'AdaBoostClassifier', 'ExtraTreesClassifier',
-    # 'RidgeClassifier', 'SGDClassifier', 'XGBClassifier', 'SVC', 'nuSVC'
+    # 'RidgeClassifier', 'SGDClassifier', 'XGBClassifier', 'SVC', 'nuSVC', 'VotingClassifier'
     # DL model: 'ConvLSTM', 'MultiChannelCNNLSTM', 'Transformer', 'ResNet', 'MLP_Mixer', 'AutoEncoder'
-    config['model_type'] = 'Transformer'  # 사용할 모델 타입
+    config['model_type'] = 'VotingClassifier'  # 사용할 모델 타입
     config['XAI'] = False  # True, False // 현재 ML 모델에 대해서만 구현
 
     model_config = {
@@ -179,6 +179,41 @@ def create_config():
                 'nu': 0.01,
                 'kernel': 'rbf',       # 커널 종류 ('linear', 'rbf', 'poly', 'sigmoid')
                 'gamma': 'scale'       # 커널 계수 ('scale', 'auto' 또는 실수값)
+            },
+            'class_weight': {0: 1, 1: 1000}
+        },
+
+        'VotingClassifier': {
+            'back_end': 'sklearn',
+            'data_shape': 'flatten',
+            'undersampling': 'ENN',
+            'ENN_parameter': {'sampling_strategy': 'auto', 'n_neighbors': 200},
+            'oversampling': 'TSSMOTE',
+            'SMOTE_parameter': {'sampling_strategy': 0.5, 'k_neighbors': 30},
+            'TSSMOTE_parameter': {'sampling_strategy': 0.5, 'k_neighbors': 30},
+            'SVC_parameter': {
+                'probability': True,  # XAI 사용시 True
+                'C': 0.1,  # 규제 파라미터. 작을수록 규제가 강함
+                'kernel': 'rbf',  # 커널 종류 ('linear', 'rbf', 'poly', 'sigmoid')
+                'gamma': 'scale'  # 커널 계수 ('scale', 'auto' 또는 실수값)
+            },
+            'nuSVC_parameter': {
+                'probability': True,  # XAI 사용시 True
+                'nu': 0.01,
+                'kernel': 'rbf',  # 커널 종류 ('linear', 'rbf', 'poly', 'sigmoid')
+                'gamma': 'scale'  # 커널 계수 ('scale', 'auto' 또는 실수값)
+            },
+            'AdaBoostClassifier_parameter': {'n_estimators': 1000, "learning_rate": 0.001},
+            'RidgeClassifier_parameter': {
+                'alpha': 0.978892658777735,  # 규제 강도
+                'solver': 'auto',  # 계산 알고리즘
+                'tol': 1e-4  # 중단 기준 정밀도
+            },
+            'model_parameter': {
+                'voting': 'hard',   # voting 수준: 소프트 보팅(soft)/하드 보팅(hard)
+                'weights': [2, 3, 3, 5],   # estimator 가중치, SVC-nuSVC-AdaBoost-Ridge 순서
+                'n_jobs': None,       # 사용할 cpu 코어 개수
+                'flatten_transform': True       # voting이 soft일 때만 사용, transform output에 영향을 미치는 요소
             },
             'class_weight': {0: 1, 1: 1000}
         },
