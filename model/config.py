@@ -54,7 +54,7 @@ def create_config():
     # ML model: 'RandomForestClassifier', 'AdaBoostClassifier', 'ExtraTreesClassifier',
     # 'RidgeClassifier', 'SGDClassifier', 'XGBClassifier', 'SVC', 'nuSVC', 'VotingClassifier'
     # DL model: 'ConvLSTM', 'MultiChannelCNNLSTM', 'Transformer', 'ResNet', 'MLP_Mixer', 'AutoEncoder'
-    config['model_type'] = 'VotingClassifier'  # 사용할 모델 타입
+    config['model_type'] = 'Transformer'  # 사용할 모델 타입
     config['XAI'] = False  # True, False // 현재 ML 모델에 대해서만 구현
 
     model_config = {
@@ -325,9 +325,9 @@ def create_config():
             'data_shape': 'matrix',
             'undersampling': 'ENN',
             'ENN_parameter': {'sampling_strategy': 'auto', 'n_neighbors': 201},
-            'oversampling': 'Borderline-TSSMOTE', #Borderline-TSSMOTE,TSSMOTE,SMOTE
+            'oversampling': 'Borderline-TSSMOTE',  # Borderline-TSSMOTE, TSSMOTE, SMOTE
             'SMOTE_parameter': {'sampling_strategy': 1.0, 'k_neighbors': 5},
-            'TSSMOTE_parameter': {'sampling_strategy': 1.0, 'k_neighbors':15},
+            'TSSMOTE_parameter': {'sampling_strategy': 1.0, 'k_neighbors': 15},
             'model_parameter': {
                 'embed_dim': 128,         # 각 타임스텝의 피처를 임베딩할 차원
                 'num_blocks': 4,         # 쌓을 Transformer Encoder Block의 수
