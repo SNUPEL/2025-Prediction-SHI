@@ -8,6 +8,7 @@ from get_RidgeClassifier_optimized import *
 from get_XGBClassifier import *
 from get_SVC import *
 from get_SVC_optimized import *
+from get_VotingClassifier import *
 from get_ConvLSTM import *
 from get_MultiChannelCNNLSTM import *
 from get_Transformer import *
@@ -19,7 +20,7 @@ import matplotlib.pyplot as plt
 import matplotlib.font_manager as fm
 import seaborn as sns
 import sys
-from get_RidgeClassifier_optimized import *
+
 
 
 class Model:
@@ -84,6 +85,8 @@ class Model:
         elif self.config['model_type'] == 'nuSVC':
             get_nuSVC(self)
             # get_nuSVC_optimized(self)
+        elif self.config['model_type'] == 'VotingClassifier':
+            get_VotingClassifier(self, self.config['model_parameter']['voting'])
         elif self.config['model_type'] == 'ConvLSTM':
             get_ConvLSTM(self)
         elif self.config['model_type'] == 'MultiChannelCNNLSTM':
