@@ -22,7 +22,7 @@ def create_config():
     config['data_duration'] = 12
     # 예측하는 시점을 정의(해당 일자까지 데이터가 존재한다고 가정)
     # config['label_date'] = '2024-08-01'
-    config['label_date'] = '2024-03-01'
+    config['label_date'] = '2023-03-01'
     # 라벨 판단 기준에 필요한 길이
     config['label_duration'] = 3
     # True면 경/중 경을 포함하지 않음 (label이 True인 기간만 제외, False인 기간은 사용)
@@ -33,11 +33,11 @@ def create_config():
     config['validation_ratio'] = 0.1
 
     # 데이터 로딩 시 제외할 시트 이름 목록
-    # config['sheet_ban_list'] = ['경영 영향1', '경영 영향2', '종합평가', '입사자', '입사율', '퇴사율', '본공률(시급월급)',
-    #                             '4대보험 가입자', '본공률(4대보험)', '안전사고 건수(중간, 낮음)', '안전사고 건수(높음)',
-    #                             '공수능률',  '시급,월급제 인원', '투입인원', '환산능률']
-    config['sheet_ban_list'] = ['경영 영향1', '경영 영향2', '종합평가', '본공률(4대보험)', '본공률(시급월급)', '시급,월급제 인원',
-                                '4대보험 가입자', '안전사고 건수(중간, 낮음)', '안전사고 건수(높음)']
+    config['sheet_ban_list'] = ['경영 영향1', '경영 영향2', '종합평가', '입사자', '입사율', '퇴사율', '본공률(시급월급)',
+                                '4대보험 가입자', '본공률(4대보험)', '안전사고 건수(중간, 낮음)', '안전사고 건수(높음)',
+                                '공수능률',  '시급,월급제 인원', '투입인원', '환산능률']
+    # config['sheet_ban_list'] = ['경영 영향1', '경영 영향2', '종합평가', '본공률(4대보험)', '본공률(시급월급)', '시급,월급제 인원',
+    #                             '4대보험 가입자', '안전사고 건수(중간, 낮음)', '안전사고 건수(높음)']
 
     # 정규화: None, standard
     config['scaler'] = 'standard'
@@ -54,7 +54,7 @@ def create_config():
     # ML model: 'RandomForestClassifier', 'AdaBoostClassifier', 'ExtraTreesClassifier',
     # 'RidgeClassifier', 'SGDClassifier', 'XGBClassifier', 'SVC', 'nuSVC', 'VotingClassifier'
     # DL model: 'ConvLSTM', 'MultiChannelCNNLSTM', 'Transformer', 'ResNet', 'MLP_Mixer', 'AutoEncoder'
-    config['model_type'] = 'Transformer'  # 사용할 모델 타입
+    config['model_type'] = 'RidgeClassifier'  # 사용할 모델 타입
     config['XAI'] = False  # True, False // 현재 ML 모델에 대해서만 구현
 
     model_config = {
@@ -100,17 +100,17 @@ def create_config():
         'RidgeClassifier': {
             'back_end': 'sklearn',
             'data_shape': 'flatten',
-            'undersampling': 'ENN',
-            'ENN_parameter': {'sampling_strategy': 'auto', 'n_neighbors': 200},
-            'oversampling': 'SMOTE',
-            'SMOTE_parameter': {'sampling_strategy': 0.5, 'k_neighbors': 30},
-            'TSSMOTE_parameter': {'sampling_strategy': 0.5, 'k_neighbors': 30},
+            'undersampling': None,
+            'ENN_parameter': {'sampling_strategy': 'auto', 'n_neighbors': 201},
+            'oversampling': None,
+            'SMOTE_parameter': {'sampling_strategy': 0.5, 'k_neighbors': 5},
+            'TSSMOTE_parameter': {'sampling_strategy': 0.5, 'k_neighbors': 201},
             'model_parameter': {
-                'alpha': 1.0,          # 규제 강도
+                'alpha': 0.5075335542740347,          # 규제 강도
                 'solver': 'auto',      # 계산 알고리즘
                 'tol': 1e-4            # 중단 기준 정밀도
             },
-            'class_weight': {0: 1, 1: 1000}
+            'class_weight': {0: 1, 1: 98}
         },
 
         'SGDClassifier': {
