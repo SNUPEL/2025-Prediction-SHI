@@ -8,6 +8,7 @@ from tensorflow.keras.optimizers import AdamW
 from tensorflow.keras.metrics import Recall
 from tensorflow.keras.callbacks import EarlyStopping
 
+
 class CustomMultiHeadAttention(tf.keras.layers.Layer):
     def __init__(self, embed_dim, num_heads, **kwargs):
         super().__init__(**kwargs)
@@ -49,6 +50,7 @@ class CustomMultiHeadAttention(tf.keras.layers.Layer):
         output = self.combine_heads(concat_attention)
         return output
 
+
 class PositionalEncoding(tf.keras.layers.Layer):
     def __init__(self, position, d_model, **kwargs):
         super(PositionalEncoding, self).__init__(**kwargs)
@@ -62,6 +64,7 @@ class PositionalEncoding(tf.keras.layers.Layer):
 
     def call(self, inputs):
         return inputs + self.pos_encoding[:, :tf.shape(inputs)[1], :]
+
 
 class TransformerEncoderBlock(tf.keras.layers.Layer):
     def __init__(self, embed_dim, num_heads, ff_dim, rate=0.1, **kwargs):

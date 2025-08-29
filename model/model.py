@@ -1,5 +1,4 @@
 from get_RandomForestClassifier import *
-from evaluate_model import *
 from get_AdaBoostClassifier import *
 from get_AdaBoostClassifier_optimized import *
 from get_ExtraTreesClassifier import *
@@ -15,12 +14,13 @@ from get_Transformer import *
 from get_ResNet import *
 from get_MLP_Mixer import *
 from get_AutoEncoder import *
+from evaluate_model import *
+from get_SHAP_explainer import *
 import os
 import matplotlib.pyplot as plt
 import matplotlib.font_manager as fm
 import seaborn as sns
 import sys
-
 
 
 class Model:
@@ -167,6 +167,8 @@ class Model:
 
     def evaluate_model(self):
         evaluate_classifier(self)
+        if self.config['shap_analysis']:
+            get_SHAP_explainer(self)
 
     def save_result(self):
         # 한글 폰트 설정

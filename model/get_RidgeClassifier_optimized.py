@@ -7,11 +7,12 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.model_selection import cross_validate, StratifiedKFold
 from sklearn.metrics import make_scorer, recall_score, accuracy_score, fbeta_score
 
+
 def objective(self, trial):
     # RidgeClassifer의 class_weight 최적화
-    class_weight_False = trial.suggest_int("class_weight_False", 1, 1000)
-    class_weight_True = trial.suggest_int("class_weight_True", 1, 2000)
-    class_weight = {0: class_weight_False, 1: class_weight_True}
+    # class_weight_False = trial.suggest_int("class_weight_False", 1, 100)
+    class_weight_True = trial.suggest_int("class_weight_True", 1, 1000)
+    class_weight = {0: 1, 1: class_weight_True}
 
     # RidgeClassifier의 alpha 최적화
     alpha = trial.suggest_float("alpha", 0.1, 1)
@@ -86,7 +87,7 @@ def get_RidgeClassifier_optimized(self):
 
     # 최적 하이퍼파라미터 추출
     best_params = best_trial.params
-    class_weight = {0: best_params['class_weight_False'], 1: best_params['class_weight_True']}
+    class_weight = {0: 1, 1: best_params['class_weight_True']}
     alpha = best_params['alpha']
 
 
@@ -114,6 +115,21 @@ def get_RidgeClassifier_optimized(self):
     )
 
     self.models_hyperparameters = self.model.get_params()
+
+    # feature별 가중치 데이터프레임 생성
+    df_features = pd.DataFrame({'Feature_name': self.model.feature_names_in_, 'Feature_coef': self.model.coef_})
+    file_path = self.config["result_folder_path"] + '/Ridge_features_coef.xlsx'
+    df_features.to_excel(file_path, index=False)
+
+    max_feature_idx = np.where(self.model.coef_ == np.amax(self.model.coef_))[0][0]
+    max_feature = self.model.feature_names_in_[max_feature_idx]
+
+    min_feature_idx = np.where(self.model.coef_ == np.amin(self.model.coef_))[0][0]
+    min_feature = self.model.feature_names_in_[min_feature_idx]
+
+    print('\n=== Feature별 계수 분석 결과 ===')
+    print('가중치가 가장 큰 feature:', max_feature, ' 값:', np.amax(self.model.coef_))
+    print('가중치가 가장 작은 feature:', min_feature, ' 값:', np.amin(self.model.coef_))
 
     if self.config.get('save_model', False):
         folder_path = self.config.get('result_folder_path', '.')

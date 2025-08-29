@@ -51,9 +51,10 @@ if __name__ == '__main__':
     model.save_result()
     print("==== 결과 저장 완료 =====\n")
 
-    if config['XAI']:
-        print("\n==== XAI ====")
+
+    if config['DiCE']:
+        print("\n==== DiCE ====")
         get_dice(config, data, model)
-        print("\n==== XAI 종료 ====")
+        print("\n==== DiCE 종료 ====")
 
     print('Run Time: ', time.time() - start_time)

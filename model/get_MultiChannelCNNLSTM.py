@@ -164,7 +164,7 @@ def get_MultiChannelCNNLSTM(self):
 
     # 검증 데이터
     X_valid_3d = np.array([df.values for df in self.data.df_x_valid_matrix_dict.values()])
-    y_valid = np.array(list(self.df_y_valid_dict.values()))
+    y_valid = np.array(list(self.data.df_y_valid_dict.values()))
 
     # 테스트 데이터
     X_test_3d = np.array([df.values for df in self.data.df_x_test_matrix_dict.values()])

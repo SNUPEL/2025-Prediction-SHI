@@ -14,7 +14,6 @@ def split_data(self):
     temp_X_test, temp_y_test, temp_name_test = [], [], []
 
     # 모든 회사에 공통으로 적용될 feature_names를 미리 정의
-    # 실제 데이터에서 추출해야 함. 여기서는 첫 번째 회사를 예시로 사용
     first_company_key = next(iter(self.company_dict))
     feature_names = sorted(list(self.company_dict[first_company_key].data_dict.keys()))
     self.feature_names = feature_names
@@ -38,13 +37,6 @@ def split_data(self):
             if self.config['severity_label_type'] and label and company.severity_level == 'B':
                 continue
 
-            # 2. 특징 데이터를 항상 (data_duration, num_features) 매트릭스 형태로 생성
-            # instance_features = np.zeros((self.config['data_duration'], num_features))
-            # for i in range(self.config['data_duration']):
-            #     current_date_in_window = window_start_date + pd.DateOffset(months=i)
-            #     for j, feature_name in enumerate(feature_names):
-            #         val = company.data_dict[feature_name].get(current_date_in_window, np.nan)
-            #         instance_features[i, j] = val
             instance_features = np.zeros((num_features, self.config['data_duration']))
             for i in range(self.config['data_duration']):
                 current_date_in_window = window_start_date + pd.DateOffset(months=i)
@@ -52,7 +44,6 @@ def split_data(self):
                     val = company.data_dict[feature_name].get(current_date_in_window, np.nan)
                     instance_features[j, i] = val
 
-            # 3. 통합된 오버랩 및 분할 로직
             # 모든 데이터는 matrix 형태로 생성된 후, 여기서 train/test로 분리
             if date <= self.split_cutoff_date:
                 # 'overlap'이 False이고 윈도우가 분할 기준을 넘어가는 경우, 훈련 세트에 포함시키지 않음
@@ -167,14 +158,8 @@ def apply_undersampling(self):
     print(f"  undersampling 적용 완료: 원본 {y_train.shape[0]}개 → 최종 {self.df_y_train_after_sampling.shape[0]}개")
     print(f"  제거된 데이터 수: {y_train.shape[0] - self.df_y_train_after_sampling.shape[0]}개")
 
-def apply_oversampling(self):
-    """
-    설정에 따라 세 가지 오버샘플링 방식 중 하나를 선택하여 적용합니다.
-    1. 'SMOTE' / 'BorderlineSMOTE': 평탄화된 데이터에 적용 (비교 실험용)
-    2. 'TSSMOTE': 시계열 데이터 구조를 유지하며 오버샘플링 (표준 방식)
-    3. 'Borderline-TSSMOTE': TSSMOTE를 경계선 데이터에 집중하여 고도화 (추천 방식)
-    """
 
+def apply_oversampling(self):
     # --- 1. 표준 SMOTE / BorderlineSMOTE 로직 ---
     if self.config['oversampling'] in ['BorderlineSMOTE', 'SMOTE']:
         print(f"\n==== '{self.config['oversampling']}' 오버샘플링 시작 (평탄화 데이터 기반) ====")
@@ -237,7 +222,7 @@ def apply_oversampling(self):
         majority_keys = {key for key, label in y_dict.items() if not label}
 
         if not minority_keys or len(all_keys) <= k_neighbors:
-            print("경고: 샘플 수가 부족하여 TSSMOTE 계열 오버샘플링을 적용할 수 없습니다.");
+            print("경고: 샘플 수가 부족하여 TSSMOTE 계열 오버샘플링을 적용할 수 없습니다.")
             return
 
         base_minority_keys = list(minority_keys)
@@ -306,6 +291,7 @@ def apply_oversampling(self):
     # --- 최종 결과 출력 ---
     class_counts_after = self.df_y_train_after_sampling['label'].value_counts()
     print(f"  오버샘플링 적용 후: 거래중={class_counts_after.get(False, 0)}, 경영악화={class_counts_after.get(True, 0)}")
+
 
 def make_matrix_data(self):
     df_x_train_after_sampling = self.df_x_train_flatten_after_sampling
