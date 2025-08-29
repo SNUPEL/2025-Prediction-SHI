@@ -53,7 +53,7 @@ def create_config():
     # ML model: 'RandomForestClassifier', 'AdaBoostClassifier', 'ExtraTreesClassifier',
     # 'RidgeClassifier', 'SGDClassifier', 'XGBClassifier', 'SVC', 'nuSVC', 'VotingClassifier'
     # DL model: 'ConvLSTM', 'MultiChannelCNNLSTM', 'Transformer', 'ResNet', 'MLP_Mixer', 'AutoEncoder'
-    config['model_type'] = 'Transformer'  # 사용할 모델 타입
+    config['model_type'] = 'MultiChannelCNNLSTM'  # 사용할 모델 타입
     config['shap_analysis'] = True
     config['DiCE'] = False  # True, False // 현재 ML 모델에 대해서만 구현
 
@@ -292,9 +292,9 @@ def create_config():
             'data_shape': 'multichannel',
             'undersampling': 'ENN',
             # 'undersampling': None,
-            'ENN_parameter': {'sampling_strategy': 'auto', 'n_neighbors': 20},
-            # 'ENN_parameter': {'sampling_strategy': 'auto', 'n_neighbors': 100},
-            # 'oversampling': 'BorderlineSMOTE',
+            # 'ENN_parameter': {'sampling_strategy': 'auto', 'n_neighbors': 20},
+            'ENN_parameter': {'sampling_strategy': 'auto', 'n_neighbors': 50},
+            # 'oversampling': 'SMOTE',
             'oversampling': None,
             'SMOTE_parameter': {'sampling_strategy': 0.5, 'k_neighbors': 30},
             'TSSMOTE_parameter': {'sampling_strategy': 1, 'k_neighbors': 10},
@@ -302,21 +302,17 @@ def create_config():
                 'hidden_size': 256,
                 'lstm_layers': [
                     {'hidden_size': 256, 'dropout': 0.0},
-                    # {'hidden_size': 1024, 'dropout': 0.0},  #없음음
-                    {'hidden_size': 2048, 'dropout': 0.0}, 
-                    {'hidden_size': 128, 'dropout': 0.0}, #없음음
-                    # {'hidden_size': 32, 'dropout': 0.0}
+                    {'hidden_size': 2048, 'dropout': 0.3},
+                    {'hidden_size': 32, 'dropout': 0.0}
                 ],
                 'cnn_filters': 256,  # 하위 호환성용 (cnn_layers가 없을 때 사용)
                 'cnn_layers': [
                     {'filters': 256, 'kernel_size': 2, 'dropout': 0.0},
-                    # {'filters': 1024, 'kernel_size': 2, 'dropout': 0.0}, #없음
-                    {'filters': 2048, 'kernel_size': 2, 'dropout': 0.0},
-                    {'filters': 128, 'kernel_size': 2, 'dropout': 0.0}, #없음
-                    # {'filters': 32, 'kernel_size': 2, 'dropout': 0.0}
+                    {'filters': 2048, 'kernel_size': 3, 'dropout': 0.3},
+                    {'filters': 32, 'kernel_size': 2, 'dropout': 0.0}
                 ],
                 'kernel_size': 2,
-                'dropout': 0.0,
+                'dropout': 0.5,
                 'use_channel_attention': True,
                 'use_temporal_attention': True
             },
