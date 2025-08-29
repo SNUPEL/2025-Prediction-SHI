@@ -32,11 +32,11 @@ def create_config():
     config['validation_ratio'] = 0.1
 
     # 데이터 로딩 시 제외할 시트 이름 목록
-    # config['sheet_ban_list'] = ['경영 영향1', '경영 영향2', '종합평가', '입사자', '입사율', '퇴사율', '본공률(시급월급)',
-    #                             '4대보험 가입자', '본공률(4대보험)', '안전사고 건수(중간, 낮음)', '안전사고 건수(높음)',
-    #                             '공수능률',  '시급,월급제 인원', '투입인원', '환산능률']
-    config['sheet_ban_list'] = ['경영 영향1', '경영 영향2', '종합평가', '본공률(4대보험)', '본공률(시급월급)', '시급,월급제 인원',
-                                '4대보험 가입자', '안전사고 건수(중간, 낮음)', '안전사고 건수(높음)']
+    config['sheet_ban_list'] = ['경영 영향1', '경영 영향2', '종합평가', '입사자', '입사율', '퇴사율', '본공률(시급월급)',
+                                '4대보험 가입자', '본공률(4대보험)', '안전사고 건수(중간, 낮음)', '안전사고 건수(높음)',
+                                '공수능률',  '시급,월급제 인원', '투입인원', '환산능률']
+    # config['sheet_ban_list'] = ['경영 영향1', '경영 영향2', '종합평가', '본공률(4대보험)', '본공률(시급월급)',
+                                # '4대보험 가입자', '안전사고 건수(중간, 낮음)', '안전사고 건수(높음)']
 
     # 정규화: None, standard
     config['scaler'] = 'standard'
@@ -49,7 +49,7 @@ def create_config():
     # undersampling: None, tomek_link, ENN, nearmiss
     # oversampling: None, SMOTE, BorderlineSMOTE
     config['sampling_order'] = ['undersampling', 'oversampling']
-
+    
     # ML model: 'RandomForestClassifier', 'AdaBoostClassifier', 'ExtraTreesClassifier',
     # 'RidgeClassifier', 'SGDClassifier', 'XGBClassifier', 'SVC', 'nuSVC', 'VotingClassifier'
     # DL model: 'ConvLSTM', 'MultiChannelCNNLSTM', 'Transformer', 'ResNet', 'MLP_Mixer', 'AutoEncoder'
@@ -291,20 +291,37 @@ def create_config():
             'back_end': 'pytorch',
             'data_shape': 'multichannel',
             'undersampling': 'ENN',
-            'ENN_parameter': {'sampling_strategy': 'auto', 'n_neighbors': 200},
-            'oversampling': 'SMOTE',
+            # 'undersampling': None,
+            'ENN_parameter': {'sampling_strategy': 'auto', 'n_neighbors': 20},
+            # 'ENN_parameter': {'sampling_strategy': 'auto', 'n_neighbors': 100},
+            # 'oversampling': 'BorderlineSMOTE',
+            'oversampling': None,
             'SMOTE_parameter': {'sampling_strategy': 0.5, 'k_neighbors': 30},
             'TSSMOTE_parameter': {'sampling_strategy': 1, 'k_neighbors': 10},
             'model_parameter': {
-                'hidden_size': 128,
-                'cnn_filters': 64,
-                'kernel_size': 3,
-                'dropout': 0.5,
+                'hidden_size': 256,
+                'lstm_layers': [
+                    {'hidden_size': 256, 'dropout': 0.0},
+                    # {'hidden_size': 1024, 'dropout': 0.0},  #없음음
+                    {'hidden_size': 2048, 'dropout': 0.0}, 
+                    {'hidden_size': 128, 'dropout': 0.0}, #없음음
+                    # {'hidden_size': 32, 'dropout': 0.0}
+                ],
+                'cnn_filters': 256,  # 하위 호환성용 (cnn_layers가 없을 때 사용)
+                'cnn_layers': [
+                    {'filters': 256, 'kernel_size': 2, 'dropout': 0.0},
+                    # {'filters': 1024, 'kernel_size': 2, 'dropout': 0.0}, #없음
+                    {'filters': 2048, 'kernel_size': 2, 'dropout': 0.0},
+                    {'filters': 128, 'kernel_size': 2, 'dropout': 0.0}, #없음
+                    # {'filters': 32, 'kernel_size': 2, 'dropout': 0.0}
+                ],
+                'kernel_size': 2,
+                'dropout': 0.0,
                 'use_channel_attention': True,
                 'use_temporal_attention': True
             },
             'optimizer_parameter': {
-                'lr': 0.001,
+                'lr': 0.0001,
                 'weight_decay': 1e-4
             },
             'scheduler_parameter': {
@@ -313,8 +330,8 @@ def create_config():
                 'patience': 10
             },
             'fit_parameter': {
-                'epochs': 50,
-                'batch_size': 32,
+                'epochs': 10,
+                'batch_size': 64,
                 'early_stopping_patience': 15
             },
             'threshold': 0.5
