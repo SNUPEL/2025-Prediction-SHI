@@ -21,7 +21,7 @@ def create_config():
     # 입력 데이터 기간(길이) 설정
     config['data_duration'] = 12
     # 예측하는 시점을 정의(해당 일자까지 데이터가 존재한다고 가정)
-    config['label_date'] = '2023-03-01'
+    config['label_date'] = '2023-06-01'
     # 라벨 판단 기준에 필요한 길이
     config['label_duration'] = 3
     # True면 경/중 경을 포함하지 않음 (label이 True인 기간만 제외, False인 기간은 사용)
@@ -32,11 +32,14 @@ def create_config():
     config['validation_ratio'] = 0.1
 
     # 데이터 로딩 시 제외할 시트 이름 목록
-    config['sheet_ban_list'] = ['경영 영향1', '경영 영향2', '종합평가', '입사자', '입사율', '퇴사율', '본공률(시급월급)',
-                                '4대보험 가입자', '본공률(4대보험)', '안전사고 건수(중간, 낮음)', '안전사고 건수(높음)',
-                                '공수능률',  '시급,월급제 인원', '투입인원', '환산능률']
-    # config['sheet_ban_list'] = ['경영 영향1', '경영 영향2', '종합평가', '본공률(4대보험)', '본공률(시급월급)',
-                                # '4대보험 가입자', '안전사고 건수(중간, 낮음)', '안전사고 건수(높음)']
+    # config['sheet_ban_list'] = ['경영 영향1', '경영 영향2', '종합평가', '입사자', '입사율', '퇴사율', '본공률(시급월급)',
+                                # '4대보험 가입자', '본공률(4대보험)', '안전사고 건수(중간, 낮음)', '안전사고 건수(높음)',
+                                # '공수능률',  '시급,월급제 인원', '투입인원', '환산능률']
+    # config['sheet_ban_list'] = ['경영 영향1','경영 영향2','환산능률', '시급,월급제 인원', '본공률(4대보험)', '본공률(시급월급)',
+    #                             '4대보험 가입자', '안전사고 건수(중간, 낮음)', '안전사고 건수(높음)','종합평가']
+
+    config['sheet_ban_list'] = ['경영 영향1', '경영 영향2', '종합평가', '본공률(4대보험)', '본공률(시급월급)',
+                                '4대보험 가입자', '안전사고 건수(중간, 낮음)', '안전사고 건수(높음)']
 
     # 정규화: None, standard
     config['scaler'] = 'standard'
@@ -54,6 +57,7 @@ def create_config():
     # 'RidgeClassifier', 'SGDClassifier', 'XGBClassifier', 'SVC', 'nuSVC', 'VotingClassifier'
     # DL model: 'ConvLSTM', 'MultiChannelCNNLSTM', 'Transformer', 'ResNet', 'MLP_Mixer', 'AutoEncoder'
     config['model_type'] = 'MultiChannelCNNLSTM'  # 사용할 모델 타입
+    # config['shap_analysis'] = False
     config['shap_analysis'] = True
     config['DiCE'] = False  # True, False // 현재 ML 모델에 대해서만 구현
 
@@ -293,28 +297,53 @@ def create_config():
             'undersampling': 'ENN',
             # 'undersampling': None,
             # 'ENN_parameter': {'sampling_strategy': 'auto', 'n_neighbors': 20},
-            'ENN_parameter': {'sampling_strategy': 'auto', 'n_neighbors': 50},
-            # 'oversampling': 'SMOTE',
+            'ENN_parameter': {'sampling_strategy': 'auto', 'n_neighbors': 30},
+            # 'ENN_parameter': {'sampling_strategy': 'auto', 'n_neighbors': 15},
+            # 'oversampling': 'Borderline-TSSMOTE',
             'oversampling': None,
-            'SMOTE_parameter': {'sampling_strategy': 0.5, 'k_neighbors': 30},
-            'TSSMOTE_parameter': {'sampling_strategy': 1, 'k_neighbors': 10},
+            # 'oversampling': 'Borderline-TSSMOTE',  # Borderline-TSSMOTE, TSSMOTE, SMOTE
+            'SMOTE_parameter': {'sampling_strategy': 0.1, 'k_neighbors': 15},
+            'TSSMOTE_parameter': {'sampling_strategy': 0.1, 'k_neighbors': 15},
             'model_parameter': {
-                'hidden_size': 256,
+                'hidden_size': 512,
                 'lstm_layers': [
-                    {'hidden_size': 256, 'dropout': 0.0},
-                    {'hidden_size': 2048, 'dropout': 0.3},
-                    {'hidden_size': 32, 'dropout': 0.0}
+                    {'hidden_size': 128, 'dropout': 0.1},
+                    {'hidden_size': 512, 'dropout': 0.1},
+                    {'hidden_size': 64, 'dropout': 0.1}
                 ],
-                'cnn_filters': 256,  # 하위 호환성용 (cnn_layers가 없을 때 사용)
+                'cnn_filters': 512,  # 하위 호환성용 (cnn_layers가 없을 때 사용)
                 'cnn_layers': [
-                    {'filters': 256, 'kernel_size': 2, 'dropout': 0.0},
-                    {'filters': 2048, 'kernel_size': 3, 'dropout': 0.3},
-                    {'filters': 32, 'kernel_size': 2, 'dropout': 0.0}
+                    {'filters': 128, 'kernel_size': 3, 'dropout': 0.1},
+                    {'filters': 512, 'kernel_size': 3, 'dropout': 0.1},
+                    {'filters': 64, 'kernel_size': 3, 'dropout': 0.1}
                 ],
                 'kernel_size': 2,
                 'dropout': 0.5,
                 'use_channel_attention': True,
-                'use_temporal_attention': True
+                'use_temporal_attention': True,
+                # Bi-LSTM 및 Transformer 설정 추가
+                'use_bidirectional': True,  # Bi-LSTM 사용 여부
+                'use_transformer': True,  # Transformer 사용 여부
+                'transformer_position': 'after_cnn',  # 'after_cnn' or 'after_lstm'
+                'positional_encoding': False,  # 채널 순서 무관하므로 False
+                'transformer_config': {
+                    'num_heads': 4,  # Multi-head attention 헤드 수
+                    'num_encoder_layers': 4,  # Transformer encoder 층 수
+                    # d_model은 자동 계산됨: after_cnn이면 CNN 마지막 필터 수, after_lstm이면 LSTM 마지막 hidden_size * bidirectional_factor
+                    'dim_feedforward': 128,  # FFN 차원
+                    'dropout': 0.1  # Transformer 내부 dropout
+                },
+                # Residual Connection 설정
+                'use_residual_connection': True,  # Residual Connection 사용 여부
+                'residual_weight': 0.1,  # Residual Connection 가중치
+                # Cross-Channel Transformer 설정
+                'use_cross_channel_transformer': True,  # 채널 간 Transformer 사용 여부
+                'cross_channel_transformer_config': {
+                    'num_heads': 4,  # 채널 수와 호환되도록 자동 조정됨
+                    'num_encoder_layers': 4,  # Cross-channel encoder 층 수
+                    'dim_feedforward': 128,  # FFN 차원
+                    'dropout': 0.1  # Dropout
+                }
             },
             'optimizer_parameter': {
                 'lr': 0.0001,
@@ -326,7 +355,7 @@ def create_config():
                 'patience': 10
             },
             'fit_parameter': {
-                'epochs': 10,
+                'epochs': 30,
                 'batch_size': 64,
                 'early_stopping_patience': 15
             },
@@ -457,9 +486,9 @@ def create_config():
     config["result_folder_path"] = '../results/{0}_{1}h_{2}m_{3}s'.format(
         config['ymd'], config['hour'], config['minute'], config['second'])
 
-    # 결과 폴더 생성 (폴더가 없으면 생성)
+    # 결과 폴더 생성 (폴더가 없으면 생성, 상위 디렉토리도 함께 생성)
     if not os.path.exists(config["result_folder_path"]):
-        os.mkdir(config["result_folder_path"])
+        os.makedirs(config["result_folder_path"], exist_ok=True)
 
     # 현재 설정 정보를 엑셀 파일로 저장
     config_df = pd.json_normalize(config, sep='_').transpose()

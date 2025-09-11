@@ -178,6 +178,12 @@ def get_SHAP_explainer(self):
 
             X_test_dict = {name: [] for name in self.data.feature_names}
             for x_val in X_test:
+                # GPU 텐서를 CPU로 이동
+                if hasattr(x_val, 'cpu'):
+                    x_val = x_val.cpu()
+                if hasattr(x_val, 'numpy'):
+                    x_val = x_val.numpy()
+                
                 for i, name in enumerate(self.data.feature_names):
                     X_test_dict[name].extend(x_val[i])
             X_test_df = pd.DataFrame(X_test_dict)
@@ -215,6 +221,12 @@ def get_SHAP_explainer(self):
 
             X_test_dict = {name: [] for name in self.data.feature_names}
             for x_val in X_test:
+                # GPU 텐서를 CPU로 이동
+                if hasattr(x_val, 'cpu'):
+                    x_val = x_val.cpu()
+                if hasattr(x_val, 'numpy'):
+                    x_val = x_val.numpy()
+                
                 for i, name in enumerate(self.data.feature_names):
                     X_test_dict[name].extend(x_val[i])
             X_test_df = pd.DataFrame(X_test_dict)
