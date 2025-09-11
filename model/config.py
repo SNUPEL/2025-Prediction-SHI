@@ -32,11 +32,11 @@ def create_config():
     config['validation_ratio'] = 0.1
 
     # 데이터 로딩 시 제외할 시트 이름 목록
-    config['sheet_ban_list'] = ['경영 영향1', '경영 영향2', '종합평가', '입사자', '입사율', '퇴사율', '본공률(시급월급)',
-                                '4대보험 가입자', '본공률(4대보험)', '안전사고 건수(중간, 낮음)', '안전사고 건수(높음)',
-                                '공수능률',  '시급,월급제 인원', '투입인원', '환산능률']
-    # config['sheet_ban_list'] = ['경영 영향1', '경영 영향2', '종합평가', '본공률(4대보험)', '본공률(시급월급)',
-                                # '4대보험 가입자', '안전사고 건수(중간, 낮음)', '안전사고 건수(높음)']
+    # config['sheet_ban_list'] = ['경영 영향1', '경영 영향2', '종합평가', '입사자', '입사율', '퇴사율', '본공률(시급월급)',
+    #                             '4대보험 가입자', '본공률(4대보험)', '안전사고 건수(중간, 낮음)', '안전사고 건수(높음)',
+    #                             '공수능률',  '시급,월급제 인원', '투입인원', '환산능률']
+    config['sheet_ban_list'] = ['경영 영향1', '경영 영향2', '종합평가', '본공률(4대보험)', '본공률(시급월급)',
+                                '4대보험 가입자', '안전사고 건수(중간, 낮음)', '안전사고 건수(높음)']
 
     # 정규화: None, standard
     config['scaler'] = 'standard'
@@ -53,7 +53,7 @@ def create_config():
     # ML model: 'RandomForestClassifier', 'AdaBoostClassifier', 'ExtraTreesClassifier',
     # 'RidgeClassifier', 'SGDClassifier', 'XGBClassifier', 'SVC', 'nuSVC', 'VotingClassifier'
     # DL model: 'ConvLSTM', 'MultiChannelCNNLSTM', 'Transformer', 'ResNet', 'MLP_Mixer', 'AutoEncoder'
-    config['model_type'] = 'MultiChannelCNNLSTM'  # 사용할 모델 타입
+    config['model_type'] = 'Transformer'  # 사용할 모델 타입
     config['shap_analysis'] = True
     config['DiCE'] = False  # True, False // 현재 ML 모델에 대해서만 구현
 
@@ -337,7 +337,7 @@ def create_config():
             'back_end': 'tensorflow',
             'data_shape': 'matrix',
             'undersampling': 'ENN',
-            'ENN_parameter': {'sampling_strategy': 'auto', 'n_neighbors': 201},
+            'ENN_parameter': {'sampling_strategy': 'auto', 'n_neighbors': 30},
             'oversampling': 'Borderline-TSSMOTE',  # Borderline-TSSMOTE, TSSMOTE, SMOTE
             'SMOTE_parameter': {'sampling_strategy': 1.0, 'k_neighbors': 5},
             'TSSMOTE_parameter': {'sampling_strategy': 1.0, 'k_neighbors': 15},
@@ -345,12 +345,11 @@ def create_config():
                 'embed_dim': 128,         # 각 타임스텝의 피처를 임베딩할 차원
                 'num_blocks': 4,         # 쌓을 Transformer Encoder Block의 수
                 'num_heads': 8,          # Multi-Head Attention의 헤드 수
-                'ff_dim': 256,           # Encoder Block 내부 피드포워드 신경망의 차원
                 'dropout_rate': 0.1,
                 'output_layer': {'units': 1, 'activation': 'sigmoid'}
             },
             'compile_parameter': {
-                'learning_rate': 0.001,
+                'learning_rate': 0.0001,
                 'weight_decay': 0.01,
                 'loss': 'binary_crossentropy',
                 'metrics': ['accuracy', Recall(name='recall')]  # Recall 메트릭 추가
@@ -362,7 +361,8 @@ def create_config():
                 'shuffle': True
                 # callbacks 추가 구현 필요
             },
-            'threshold': 0.5
+            'threshold': 0.5,
+            'use_early_stopping': False,  # 콜백 사용 여부 설정
         },
 
         'ResNet': {
@@ -459,7 +459,7 @@ def create_config():
 
     # 결과 폴더 생성 (폴더가 없으면 생성)
     if not os.path.exists(config["result_folder_path"]):
-        os.mkdir(config["result_folder_path"])
+        os.makedirs(config["result_folder_path"])
 
     # 현재 설정 정보를 엑셀 파일로 저장
     config_df = pd.json_normalize(config, sep='_').transpose()
