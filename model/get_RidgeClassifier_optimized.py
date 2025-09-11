@@ -10,9 +10,9 @@ from sklearn.metrics import make_scorer, recall_score, accuracy_score, fbeta_sco
 
 def objective(self, trial):
     # RidgeClassifer의 class_weight 최적화
-    # class_weight_False = trial.suggest_int("class_weight_False", 1, 100)
+    class_weight_False = trial.suggest_int("class_weight_False", 1, 1000)
     class_weight_True = trial.suggest_int("class_weight_True", 1, 1000)
-    class_weight = {0: 1, 1: class_weight_True}
+    class_weight = {0: class_weight_False, 1: class_weight_True}
 
     # RidgeClassifier의 alpha 최적화
     alpha = trial.suggest_float("alpha", 0.1, 1)
@@ -87,7 +87,7 @@ def get_RidgeClassifier_optimized(self):
 
     # 최적 하이퍼파라미터 추출
     best_params = best_trial.params
-    class_weight = {0: 1, 1: best_params['class_weight_True']}
+    class_weight = {0: best_params['class_weight_False'], 1: best_params['class_weight_True']}
     alpha = best_params['alpha']
 
 

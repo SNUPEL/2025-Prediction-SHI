@@ -21,7 +21,7 @@ def create_config():
     # 입력 데이터 기간(길이) 설정
     config['data_duration'] = 12
     # 예측하는 시점을 정의(해당 일자까지 데이터가 존재한다고 가정)
-    config['label_date'] = '2023-03-01'
+    config['label_date'] = '2023-09-01'
     # 라벨 판단 기준에 필요한 길이
     config['label_duration'] = 3
     # True면 경/중 경을 포함하지 않음 (label이 True인 기간만 제외, False인 기간은 사용)
@@ -53,7 +53,7 @@ def create_config():
     # ML model: 'RandomForestClassifier', 'AdaBoostClassifier', 'ExtraTreesClassifier',
     # 'RidgeClassifier', 'SGDClassifier', 'XGBClassifier', 'SVC', 'nuSVC', 'VotingClassifier'
     # DL model: 'ConvLSTM', 'MultiChannelCNNLSTM', 'Transformer', 'ResNet', 'MLP_Mixer', 'AutoEncoder'
-    config['model_type'] = 'Transformer'  # 사용할 모델 타입
+    config['model_type'] = 'RidgeClassifier'  # 사용할 모델 타입
     config['shap_analysis'] = True
     config['DiCE'] = False  # True, False // 현재 ML 모델에 대해서만 구현
 
@@ -106,11 +106,11 @@ def create_config():
             'SMOTE_parameter': {'sampling_strategy': 0.5, 'k_neighbors': 30},
             'TSSMOTE_parameter': {'sampling_strategy': 0.5, 'k_neighbors': 201},
             'model_parameter': {
-                'alpha': 0.5075335542740347,          # 규제 강도
+                'alpha': 0.9887,          # 규제 강도
                 'solver': 'auto',      # 계산 알고리즘
                 'tol': 1e-4            # 중단 기준 정밀도
             },
-            'class_weight': {0: 1, 1: 98}
+            'class_weight': {0: 6, 1: 770}
         },
 
         'SGDClassifier': {
