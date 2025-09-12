@@ -22,14 +22,9 @@ def split_data(self):
     for company_id, company in self.company_dict.items():
         for date in company.date_range:
             name = str(company_id) + '_' + str(date.date())
-            if date > self.split_cutoff_date and self.split_cutoff_date + pd.DateOffset(months=self.config['data_duration'] + self.config['label_duration']) > company.date_range[-1]:
-                break
-
             window_start_date = date
             window_end_date = date + pd.DateOffset(months=self.config['data_duration'] - 1)
             label_date = window_end_date + pd.DateOffset(months=self.config['label_duration'])
-            if company.date_range and window_end_date >= company.date_range[-1]:
-                break
 
             label = True if company.label and window_end_date < company.end_date <= label_date else False
 
@@ -44,8 +39,7 @@ def split_data(self):
                     val = company.data_dict[feature_name].get(current_date_in_window, np.nan)
                     instance_features[j, i] = val
 
-            # 모든 데이터는 matrix 형태로 생성된 후, 여기서 train/test로 분리
-            if date <= self.split_cutoff_date:
+            if (company.end_date is not None and company.end_date < self.label_date) or (date <= self.split_cutoff_date):
                 # 'overlap'이 False이고 윈도우가 분할 기준을 넘어가는 경우, 훈련 세트에 포함시키지 않음
                 if not self.config.get('overlap', True) and window_end_date > self.split_cutoff_date:
                     continue
