@@ -30,7 +30,11 @@ class MultiChannelCNNLSTM(nn.Module):
 
     def __init__(self, n_channels, time_points, feature_dim=1, hidden_size=128,
                  lstm_layers=None, cnn_filters=64, cnn_layers=None, kernel_size=3, dropout=0.5,
-                 use_channel_attention=True, use_temporal_attention=True):
+                 use_channel_attention=True, use_temporal_attention=True,
+                 use_bidirectional=False, use_transformer=False, 
+                 transformer_position='after_lstm', positional_encoding=False,
+                 transformer_config=None, use_residual_connection=False, residual_weight=0.1,
+                 use_cross_channel_transformer=False, cross_channel_transformer_config=None):
         super(MultiChannelCNNLSTM, self).__init__()
 
         # CNN 층 설정 (없으면 기본값 사용)
@@ -52,6 +56,13 @@ class MultiChannelCNNLSTM(nn.Module):
         self.dropout = dropout
         self.use_channel_attention = use_channel_attention
         self.use_temporal_attention = use_temporal_attention
+        self.use_bidirectional = use_bidirectional
+        self.use_transformer = use_transformer
+        self.transformer_position = transformer_position
+        self.positional_encoding = positional_encoding
+        self.use_residual_connection = use_residual_connection
+        self.residual_weight = residual_weight
+        self.use_cross_channel_transformer = use_cross_channel_transformer
 
         # 각 채널별 다층 CNN 처리
         self.channel_cnns = nn.ModuleList()
@@ -88,12 +99,14 @@ class MultiChannelCNNLSTM(nn.Module):
             for i, layer_config in enumerate(lstm_layers):
                 layer_hidden_size = layer_config['hidden_size']
                 
-                # 단일 층 LSTM
+                # 단일 층 LSTM (bidirectional 옵션 추가)
                 lstm_layer = nn.LSTM(input_size, layer_hidden_size, 
-                                   batch_first=True, dropout=0.0)
+                                   batch_first=True, dropout=0.0,
+                                   bidirectional=self.use_bidirectional)
                 
                 lstm_list.append(lstm_layer)
-                input_size = layer_hidden_size  # 다음 층의 입력 크기
+                # Bidirectional LSTM은 출력이 2배가 되므로 다음 층 입력 크기 조정
+                input_size = layer_hidden_size * (2 if self.use_bidirectional else 1)
             
             self.channel_lstms.append(lstm_list)
 
@@ -103,28 +116,118 @@ class MultiChannelCNNLSTM(nn.Module):
             for layer_config in lstm_layers[:-1]  # 마지막 층 제외
         ])
 
-        # 채널 어텐션 메커니즘
+        # Bidirectional 사용시 출력 차원이 2배가 됨
+        self.bidirectional_factor = 2 if use_bidirectional else 1
+        adjusted_hidden_size = final_hidden_size * self.bidirectional_factor
+
+        # Transformer 블록 추가
+        if use_transformer:
+            # transformer_position에 따라 d_model 동적 설정
+            if transformer_position == 'after_cnn':
+                # CNN 출력 차원 사용
+                transformer_d_model = final_cnn_filters
+            else:  # after_lstm
+                # LSTM 출력 차원 사용 (bidirectional 고려)
+                transformer_d_model = adjusted_hidden_size
+            
+            if transformer_config is None:
+                transformer_config = {}
+            
+            # config에서 제공된 값 또는 동적 계산된 값 사용
+            transformer_config = {
+                'num_heads': transformer_config.get('num_heads', 8),
+                'num_encoder_layers': transformer_config.get('num_encoder_layers', 2),
+                'd_model': transformer_d_model,  # 동적으로 설정
+                'dim_feedforward': transformer_config.get('dim_feedforward', transformer_d_model * 4),
+                'dropout': transformer_config.get('dropout', 0.1)
+            }
+            
+            # d_model이 num_heads로 나누어떨어지는지 확인 및 조정
+            if transformer_d_model % transformer_config['num_heads'] != 0:
+                # num_heads를 조정
+                transformer_config['num_heads'] = min(transformer_config['num_heads'], transformer_d_model)
+                while transformer_d_model % transformer_config['num_heads'] != 0:
+                    transformer_config['num_heads'] -= 1
+                    if transformer_config['num_heads'] < 1:
+                        transformer_config['num_heads'] = 1
+                        break
+            
+            encoder_layer = nn.TransformerEncoderLayer(
+                d_model=transformer_d_model,
+                nhead=transformer_config['num_heads'],
+                dim_feedforward=transformer_config.get('dim_feedforward', transformer_d_model * 4),
+                dropout=transformer_config.get('dropout', 0.1),
+                batch_first=True
+            )
+            self.transformer = nn.TransformerEncoder(
+                encoder_layer,
+                num_layers=transformer_config.get('num_encoder_layers', 2)
+            )
+            
+            # Transformer 설정 저장 (디버깅용)
+            self.transformer_config = transformer_config
+
+        # 채널 어텐션 메커니즘 (adjusted_hidden_size 사용)
         if use_channel_attention:
             self.channel_attention = nn.Sequential(
-                nn.Linear(final_hidden_size, final_hidden_size // 2),
+                nn.Linear(adjusted_hidden_size, adjusted_hidden_size // 2),
                 nn.ReLU(),
-                nn.Linear(final_hidden_size // 2, 1)
+                nn.Linear(adjusted_hidden_size // 2, 1)
             )
 
-        # 시간적 어텐션 메커니즘
+        # 시간적 어텐션 메커니즘 (adjusted_hidden_size 사용)
         if use_temporal_attention:
             self.temporal_attention = nn.Sequential(
-                nn.Linear(final_hidden_size, final_hidden_size // 2),
+                nn.Linear(adjusted_hidden_size, adjusted_hidden_size // 2),
                 nn.ReLU(),
-                nn.Linear(final_hidden_size // 2, 1)
+                nn.Linear(adjusted_hidden_size // 2, 1)
             )
 
-        # 최종 분류기
+        # Cross-Channel Transformer 추가 (채널 간 상호작용)
+        if use_cross_channel_transformer:
+            if cross_channel_transformer_config is None:
+                cross_channel_transformer_config = {}
+            
+            # 채널 차원을 sequence로 사용하므로 d_model은 adjusted_hidden_size
+            cross_channel_d_model = adjusted_hidden_size
+            
+            # config 설정
+            cross_config = {
+                'num_heads': cross_channel_transformer_config.get('num_heads', 4),
+                'num_encoder_layers': cross_channel_transformer_config.get('num_encoder_layers', 1),
+                'd_model': cross_channel_d_model,
+                'dim_feedforward': cross_channel_transformer_config.get('dim_feedforward', cross_channel_d_model * 4),
+                'dropout': cross_channel_transformer_config.get('dropout', 0.1)
+            }
+            
+            # num_heads가 d_model로 나누어떨어지는지 확인
+            if cross_channel_d_model % cross_config['num_heads'] != 0:
+                cross_config['num_heads'] = min(cross_config['num_heads'], cross_channel_d_model)
+                while cross_channel_d_model % cross_config['num_heads'] != 0:
+                    cross_config['num_heads'] -= 1
+                    if cross_config['num_heads'] < 1:
+                        cross_config['num_heads'] = 1
+                        break
+            
+            cross_encoder_layer = nn.TransformerEncoderLayer(
+                d_model=cross_channel_d_model,
+                nhead=cross_config['num_heads'],
+                dim_feedforward=cross_config['dim_feedforward'],
+                dropout=cross_config['dropout'],
+                batch_first=True
+            )
+            self.cross_channel_transformer = nn.TransformerEncoder(
+                cross_encoder_layer,
+                num_layers=cross_config['num_encoder_layers']
+            )
+            self.cross_channel_config = cross_config
+        
+        # 최종 분류기 (adjusted_hidden_size 사용)
         self.classifier = nn.Sequential(
-            nn.Linear(final_hidden_size, final_hidden_size // 2),
+            nn.Linear(adjusted_hidden_size, adjusted_hidden_size // 2),
             nn.ReLU(),
             nn.Dropout(dropout),
-            nn.Linear(final_hidden_size // 2, 1)
+            nn.Linear(adjusted_hidden_size // 2, 1)
         )
 
     def forward(self, x):
@@ -155,16 +258,30 @@ class MultiChannelCNNLSTM(nn.Module):
 
             # LSTM을 위해 차원 변경: (batch_size, time_points, final_cnn_filters)
             lstm_input = cnn_input.transpose(1, 2)
+            
+            # Transformer 적용 (after_cnn 위치)
+            if self.use_transformer and self.transformer_position == 'after_cnn':
+                lstm_input = self.transformer(lstm_input)
 
             # 다층 LSTM 처리
+            lstm_original = lstm_input.clone() if self.use_residual_connection else None
+            
             for j, lstm_layer in enumerate(self.channel_lstms[i]):
                 lstm_out, (h_n, c_n) = lstm_layer(lstm_input)
+                
+                # Residual Connection 적용 (첫 번째 층과 차원이 같을 때만)
+                if self.use_residual_connection and j == 0 and lstm_out.shape == lstm_original.shape:
+                    lstm_out = lstm_out + lstm_original * self.residual_weight
                 
                 # 마지막 층이 아니면 dropout 적용
                 if j < len(self.channel_lstms[i]) - 1:
                     lstm_out = self.lstm_dropouts[j](lstm_out)
                 
                 lstm_input = lstm_out  # 다음 층의 입력으로 사용
+            
+            # Transformer 적용 (after_lstm 위치)
+            if self.use_transformer and self.transformer_position == 'after_lstm':
+                lstm_out = self.transformer(lstm_out)
 
             # 시간적 어텐션 적용
             if self.use_temporal_attention:
@@ -182,6 +299,12 @@ class MultiChannelCNNLSTM(nn.Module):
 
         # 모든 채널 출력을 결합: (batch_size, n_channels, final_hidden_size)
         channel_outputs = torch.stack(channel_outputs, dim=1)
+        
+        # Cross-Channel Transformer 적용 (채널 간 상호작용 학습)
+        if self.use_cross_channel_transformer:
+            # 채널을 sequence로 취급하여 Transformer 적용
+            # (batch_size, n_channels, hidden_size) -> Transformer -> (batch_size, n_channels, hidden_size)
+            channel_outputs = self.cross_channel_transformer(channel_outputs)
 
         # 채널 어텐션 적용
         if self.use_channel_attention:
