@@ -506,11 +506,16 @@ def get_MultiChannelCNNLSTM(self):
         test_predictions = predictions.cpu().numpy().flatten()
         test_probabilities = probabilities.cpu().numpy().flatten()
 
-    # 예측 결과를 probability와 함께 저장
-    self.data.df_y_pred = pd.DataFrame({
-        'label': test_predictions,
-        'probability': test_probabilities
-    }, index=self.data.name_test)
+    self.data.df_y_pred_proba = pd.DataFrame(
+        test_probabilities,
+        index=self.data.name_test,
+        columns=['label']
+    )
+    self.data.df_y_pred = pd.DataFrame(
+        test_predictions,
+        index=self.data.name_test,
+        columns=['label']
+    )
 
     self.model = model  # 나중에 모델 자체를 사용하기 위해 저장
     self.history = history  # 학습 곡선 저장을 위해 history 저장
