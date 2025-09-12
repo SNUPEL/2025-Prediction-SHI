@@ -3,10 +3,10 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.keras.models import Model
 from tensorflow.keras.layers import (Input, Dense, GlobalAveragePooling1D, Dropout, LayerNormalization, Add)
-# from tensorflow.keras.optimizers import AdamW
-from tensorflow_addons.optimizers import AdamW
+from tensorflow.keras.optimizers import AdamW
 from tensorflow.keras.metrics import Recall
 from tensorflow.keras.callbacks import EarlyStopping
+from sklearn.utils.class_weight import compute_class_weight
 
 
 class CustomMultiHeadAttention(tf.keras.layers.Layer):
@@ -134,13 +134,22 @@ def get_Transformer(self):
     if self.config.get('use_early_stopping', False):
         callbacks.append(EarlyStopping(
             monitor='val_loss',
-            patience=3,
+            patience=10,
             verbose=1,
             restore_best_weights=True
         ))
 
     fit_params = self.config['fit_parameter'].copy()
     fit_params['callbacks'] = callbacks
+
+    # class weight 자동으로 계산하는 코드 추가
+    if isinstance(fit_params.get('class_weight'), str) and fit_params['class_weight'].lower() == 'auto':
+        y_labels = self.data.df_y_train['label'].values  # 훈련 데이터의 실제 레이블을 가져옵니다.
+        classes = np.unique(y_labels)
+        weights = compute_class_weight('balanced', classes=classes, y=y_labels)
+        class_weight_dict = {cls: weight for cls, weight in zip(classes, weights)}
+        fit_params['class_weight'] = class_weight_dict
+        print(f"자동 계산된 class_weight: {class_weight_dict}")
 
     # 콜백이 포함된 'fit_params'를 사용하여 모델 학습
     history = self.model.fit(x=X_train, y=y_train, validation_data=valid_set, **fit_params)
@@ -151,10 +160,4 @@ def get_Transformer(self):
     if y_pred_proba.shape[-1] == 1:
         y_pred_proba = y_pred_proba.flatten()
     y_pred_class = (y_pred_proba > self.config['threshold']).astype(int)
-
-    self.data.df_y_pred_proba = pd.DataFrame(
-        y_pred_proba,
-        index=self.data.name_test,
-        columns=['label']
-    )
     self.data.df_y_pred = pd.DataFrame(y_pred_class, index=self.data.name_test, columns=['label'])

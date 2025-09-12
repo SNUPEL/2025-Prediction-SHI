@@ -49,7 +49,7 @@ def create_config():
     # undersampling: None, tomek_link, ENN, nearmiss
     # oversampling: None, SMOTE, BorderlineSMOTE
     config['sampling_order'] = ['undersampling', 'oversampling']
-    
+
     # ML model: 'RandomForestClassifier', 'AdaBoostClassifier', 'ExtraTreesClassifier',
     # 'RidgeClassifier', 'SGDClassifier', 'XGBClassifier', 'SVC', 'nuSVC', 'VotingClassifier'
     # DL model: 'ConvLSTM', 'MultiChannelCNNLSTM', 'Transformer', 'ResNet', 'MLP_Mixer', 'AutoEncoder'
@@ -362,8 +362,8 @@ def create_config():
             'back_end': 'tensorflow',
             'data_shape': 'matrix',
             'undersampling': 'ENN',
-            'ENN_parameter': {'sampling_strategy': 'auto', 'n_neighbors': 30},
-            'oversampling': 'Borderline-TSSMOTE',  # Borderline-TSSMOTE, TSSMOTE, SMOTE
+            'ENN_parameter': {'sampling_strategy': 'auto', 'n_neighbors': 31},
+            'oversampling': None,  # Borderline-TSSMOTE, TSSMOTE, SMOTE
             'SMOTE_parameter': {'sampling_strategy': 1.0, 'k_neighbors': 5},
             'TSSMOTE_parameter': {'sampling_strategy': 1.0, 'k_neighbors': 15},
             'model_parameter': {
@@ -380,13 +380,13 @@ def create_config():
                 'metrics': ['accuracy', Recall(name='recall')]  # Recall 메트릭 추가
             },
             'fit_parameter': {
-                'epochs': 10,
+                'epochs': 50,
                 'batch_size': 64,
-                'class_weight': {0: 1, 1: 1},
+                'class_weight': 'auto',
                 'shuffle': True
             },
             'threshold': 0.5,
-            'use_early_stopping': False,  # 콜백 사용 여부 설정
+            'use_early_stopping': True,  # 콜백 사용 여부 설정
         },
 
         'ResNet': {
