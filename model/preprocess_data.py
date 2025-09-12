@@ -34,7 +34,7 @@ def split_data(self):
 
             instance_features = np.zeros((num_features, self.config['data_duration']))
             for i in range(self.config['data_duration']):
-                current_date_in_window = window_start_date + pd.DateOffset(months=i)
+                current_date_in_window = window_start_date + pd.DateOffset(months=i) - pd.DateOffset(months=self.config['data_duration'])
                 for j, feature_name in enumerate(feature_names):
                     val = company.data_dict[feature_name].get(current_date_in_window, np.nan)
                     instance_features[j, i] = val
