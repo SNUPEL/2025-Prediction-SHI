@@ -3,7 +3,8 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.keras.models import Model
 from tensorflow.keras.layers import (Input, Dense, GlobalAveragePooling1D, Dropout, LayerNormalization, Add)
-from tensorflow.keras.optimizers import AdamW
+# from tensorflow.keras.optimizers import AdamW
+from tensorflow_addons.optimizers import AdamW
 from tensorflow.keras.metrics import Recall
 from tensorflow.keras.callbacks import EarlyStopping
 
@@ -147,7 +148,8 @@ def get_Transformer(self):
     self.history = {'train_loss': history.history['loss'], 'val_loss': history.history['val_loss']}
 
     y_pred_proba = self.model.predict(X_test)
-    if y_pred_proba.shape[-1] == 1: y_pred_proba = y_pred_proba.flatten()
+    if y_pred_proba.shape[-1] == 1:
+        y_pred_proba = y_pred_proba.flatten()
     y_pred_class = (y_pred_proba > self.config['threshold']).astype(int)
 
     self.data.df_y_pred_proba = pd.DataFrame(

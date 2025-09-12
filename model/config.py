@@ -35,7 +35,6 @@ def create_config():
     # config['sheet_ban_list'] = ['경영 영향1', '경영 영향2', '종합평가', '입사자', '입사율', '퇴사율', '본공률(시급월급)',
     #                             '4대보험 가입자', '본공률(4대보험)', '안전사고 건수(중간, 낮음)', '안전사고 건수(높음)',
     #                             '공수능률',  '시급,월급제 인원', '투입인원', '환산능률']
-
     config['sheet_ban_list'] = ['경영 영향1', '경영 영향2', '종합평가', '본공률(4대보험)', '본공률(시급월급)',
                                 '4대보험 가입자', '안전사고 건수(중간, 낮음)', '안전사고 건수(높음)']
 
@@ -296,11 +295,11 @@ def create_config():
             # 'ENN_parameter': {'sampling_strategy': 'auto', 'n_neighbors': 20},
             'ENN_parameter': {'sampling_strategy': 'auto', 'n_neighbors': 30},
             # 'ENN_parameter': {'sampling_strategy': 'auto', 'n_neighbors': 15},
-            # 'oversampling': 'Borderline-TSSMOTE',
+            # 'oversampling': 'SMOTE',
             'oversampling': None,
             # 'oversampling': 'Borderline-TSSMOTE',  # Borderline-TSSMOTE, TSSMOTE, SMOTE
-            'SMOTE_parameter': {'sampling_strategy': 0.1, 'k_neighbors': 15},
-            'TSSMOTE_parameter': {'sampling_strategy': 0.1, 'k_neighbors': 15},
+            'SMOTE_parameter': {'sampling_strategy': 0.1, 'k_neighbors': 5},
+            'TSSMOTE_parameter': {'sampling_strategy': 1.0, 'k_neighbors': 15},
             'model_parameter': {
                 'hidden_size': 512,
                 'lstm_layers': [
@@ -321,11 +320,11 @@ def create_config():
                 # Bi-LSTM 및 Transformer 설정 추가
                 'use_bidirectional': True,  # Bi-LSTM 사용 여부
                 'use_transformer': True,  # Transformer 사용 여부
-                'transformer_position': 'after_cnn',  # 'after_cnn' or 'after_lstm'
+                'transformer_position': 'after_lstm',  # 'after_cnn' or 'after_lstm'
                 'positional_encoding': False,  # 채널 순서 무관하므로 False
                 'transformer_config': {
                     'num_heads': 4,  # Multi-head attention 헤드 수
-                    'num_encoder_layers': 4,  # Transformer encoder 층 수
+                    'num_encoder_layers': 2,  # Transformer encoder 층 수
                     # d_model은 자동 계산됨: after_cnn이면 CNN 마지막 필터 수, after_lstm이면 LSTM 마지막 hidden_size * bidirectional_factor
                     'dim_feedforward': 128,  # FFN 차원
                     'dropout': 0.1  # Transformer 내부 dropout
@@ -337,7 +336,7 @@ def create_config():
                 'use_cross_channel_transformer': True,  # 채널 간 Transformer 사용 여부
                 'cross_channel_transformer_config': {
                     'num_heads': 4,  # 채널 수와 호환되도록 자동 조정됨
-                    'num_encoder_layers': 4,  # Cross-channel encoder 층 수
+                    'num_encoder_layers': 2,  # Cross-channel encoder 층 수
                     'dim_feedforward': 128,  # FFN 차원
                     'dropout': 0.1  # Dropout
                 }

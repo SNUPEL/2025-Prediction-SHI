@@ -81,13 +81,7 @@ class Data:
                 print("==== 데이터 undersampling 적용 완료 =====\n")
                 make_matrix_data(self)
 
-        # if self.config['oversampling']:
-        #     print("\n==== 데이터 oversampling 적용 시작 ====")
-        #     apply_oversampling(self)
-        #     print("==== 데이터 oversampling 적용 완료 ====\n")
-
         if self.config['save_graph'] and (self.config['undersampling'] or self.config['oversampling']):
             print("\n==== 데이터 증강 후 PCA, LDA 분석 시작 ====")
             save_PCA_LDA(self, graph_name='after_under_oversampling')
             print("==== 데이터 증강 후 PCA, LDA 분석 완료 ====\n")
-

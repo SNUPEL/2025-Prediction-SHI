@@ -51,7 +51,6 @@ if __name__ == '__main__':
     model.save_result()
     print("==== 결과 저장 완료 =====\n")
 
-
     if config['DiCE']:
         print("\n==== DiCE ====")
         get_dice(config, data, model)

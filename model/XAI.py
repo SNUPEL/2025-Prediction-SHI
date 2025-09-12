@@ -101,12 +101,14 @@ def get_dice(config, data, model):
     last_timestep_index = int(config['data_duration'] - 1)
     last_timestep_index2 = int(config['data_duration'] - 2)
 
-    features_to_vary = [
-        col for col in feature_names
-        if (str(last_timestep_index) in col or str(last_timestep_index2) in col) and not any(
-            banned_word in col for banned_word in dice_params['features_to_ban'])
-    ]
+    # 2개월 사용
+    # features_to_vary = [
+    #     col for col in feature_names
+    #     if (str(last_timestep_index) in col or str(last_timestep_index2) in col) and not any(
+    #         banned_word in col for banned_word in dice_params['features_to_ban'])
+    # ]
 
+    # 1개월 사용
     features_to_vary = [
         col for col in feature_names
         if str(last_timestep_index) in col and not any(
