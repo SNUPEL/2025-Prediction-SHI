@@ -270,8 +270,8 @@ def apply_oversampling(self):
         x_resampled, y_resampled = x_dict.copy(), y_dict.copy()
         feat_names = list(x_dict[list(minority_keys)[0]].index)
         for i, data in enumerate(new_samples):
-            key = f"synthetic_{i}";
-            x_resampled[key] = pd.DataFrame(data, index=feat_names);
+            key = f"synthetic_{i}"
+            x_resampled[key] = pd.DataFrame(data, index=feat_names)
             y_resampled[key] = True
 
         self.df_x_train_matrix_dict_after_sampling, self.df_y_train_dict_after_sampling = x_resampled, y_resampled
@@ -279,8 +279,8 @@ def apply_oversampling(self):
 
         flat_data, labels, new_idx = [], [], []
         for name, matrix in x_resampled.items():
-            flat_data.append(matrix.values.flatten());
-            labels.append(y_resampled[name]);
+            flat_data.append(matrix.values.flatten())
+            labels.append(y_resampled[name])
             new_idx.append(name)
         self.df_x_train_flatten_after_sampling = pd.DataFrame(flat_data, index=new_idx,
                                                               columns=self.flattened_column_names)

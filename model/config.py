@@ -32,11 +32,11 @@ def create_config():
     config['validation_ratio'] = 0.1
 
     # 데이터 로딩 시 제외할 시트 이름 목록
-    config['sheet_ban_list'] = ['경영 영향1', '경영 영향2', '종합평가', '입사자', '입사율', '퇴사율', '본공률(시급월급)',
-                                '4대보험 가입자', '본공률(4대보험)', '안전사고 건수(중간, 낮음)', '안전사고 건수(높음)',
-                                '공수능률',  '시급,월급제 인원', '투입인원', '환산능률']
-    # config['sheet_ban_list'] = ['경영 영향1', '경영 영향2', '종합평가', '본공률(4대보험)', '본공률(시급월급)',
-                                # '4대보험 가입자', '안전사고 건수(중간, 낮음)', '안전사고 건수(높음)']
+    # config['sheet_ban_list'] = ['경영 영향1', '경영 영향2', '종합평가', '입사자', '입사율', '퇴사율', '본공률(시급월급)',
+    #                             '4대보험 가입자', '본공률(4대보험)', '안전사고 건수(중간, 낮음)', '안전사고 건수(높음)',
+    #                             '공수능률',  '시급,월급제 인원', '투입인원', '환산능률']
+    config['sheet_ban_list'] = ['경영 영향1', '경영 영향2', '종합평가', '본공률(4대보험)', '본공률(시급월급)',
+                                '4대보험 가입자', '안전사고 건수(중간, 낮음)', '안전사고 건수(높음)']
 
     # 정규화: None, standard
     config['scaler'] = 'standard'
@@ -53,9 +53,9 @@ def create_config():
     # ML model: 'RandomForestClassifier', 'AdaBoostClassifier', 'ExtraTreesClassifier',
     # 'RidgeClassifier', 'SGDClassifier', 'XGBClassifier', 'SVC', 'nuSVC', 'VotingClassifier'
     # DL model: 'ConvLSTM', 'MultiChannelCNNLSTM', 'Transformer', 'ResNet', 'MLP_Mixer', 'AutoEncoder'
-    config['model_type'] = 'MultiChannelCNNLSTM'  # 사용할 모델 타입
+    config['model_type'] = 'Transformer'  # 사용할 모델 타입
     config['shap_analysis'] = True
-    config['DiCE'] = False  # True, False // 현재 ML 모델에 대해서만 구현
+    config['DiCE'] = True  # True, False
 
     model_config = {
         'RandomForestClassifier': {
@@ -252,18 +252,18 @@ def create_config():
         'ConvLSTM': {
             'back_end': 'tensorflow',
             'data_shape': 'matrix',
-            'undersampling': None,
-            'ENN_parameter': {'sampling_strategy': 'auto', 'n_neighbors': 10},
-            'oversampling': None,
+            'undersampling': 'ENN',
+            'ENN_parameter': {'sampling_strategy': 'auto', 'n_neighbors': 100},
+            'oversampling': 'TSSMOTE',
             'SMOTE_parameter': {'sampling_strategy': 0.5, 'k_neighbors': 30},
-            'TSSMOTE_parameter': {'sampling_strategy': 0.2, 'k_neighbors': 10},
+            'TSSMOTE_parameter': {'sampling_strategy': 1, 'k_neighbors': 10},
             'sub_window_size': 4,
             'model_parameter': {
-                'dropout_rate': 0.7,
+                'dropout_rate': 0.3,
                 'convlstm_layers': [
-                    {'filters': 64, 'kernel_width': 2, 'padding': "same", 'return_sequences': True, 'activation': 'relu'},
                     {'filters': 32, 'kernel_width': 2, 'padding': "same", 'return_sequences': True, 'activation': 'relu'},
-                    {'filters': 16, 'kernel_width': 2, 'padding': "same", 'return_sequences': True, 'activation': 'relu'}
+                    {'filters': 16, 'kernel_width': 2, 'padding': "same", 'return_sequences': True, 'activation': 'relu'},
+                    {'filters': 8, 'kernel_width': 2, 'padding': "same", 'return_sequences': True, 'activation': 'relu'}
                 ],
                 'bilstm_layers': [
                     {'units': 32, 'return_sequences': True, 'activation': 'relu', 'l2_reg': 0.001},
@@ -279,9 +279,9 @@ def create_config():
                 'metrics': ['accuracy', Recall()]
             },
             'fit_parameter': {
-                'epochs': 10,
+                'epochs': 50,
                 'batch_size': 64,
-                'class_weight': {0: 1, 1: 10},
+                'class_weight': {0: 1, 1: 30},
                 'shuffle': True
             },
             'threshold': 0.5
@@ -360,7 +360,6 @@ def create_config():
                 'batch_size': 64,
                 'class_weight': {0: 1, 1: 1},
                 'shuffle': True
-                # callbacks 추가 구현 필요
             },
             'threshold': 0.5
         },
@@ -432,13 +431,13 @@ def create_config():
     config.update(model_config[config['model_type']])
 
     config['dice_parameter'] = {
-        'method': 'genetic',  # 설명 방식 ('random', 'genetic', 'kdtree')
+        'percentage_change': 0.05,
+        'method': 'random',  # 설명 방식 ('random', 'genetic', 'kdtree')
         # 설명할 대상: 'predicted_positives', 'misclassified'
-        'query_instance_mode': 'misclassified',
-        'total_CFs': 4,  # 찾을 대안의 최대 개수
+        'query_instance_mode': 'predicted_positives',
+        'total_CFs': 2,  # 찾을 대안의 최대 개수
         'desired_class': 'opposite',  # 반대 클래스로 바뀌는 대안을 찾음
-        'permitted_range': [-1, 1],
-        'features_to_vary_substrings': []  # 변경을 허용할 피처 이름에 포함된 문자열 리스트
+        'features_to_ban': ['기성매출', '종합평가', '경영 영향', '안전사고']  # 변경을 허용하지 않는 특성 리스트
     }
 
     # 학습된 모델 저장 여부 설정

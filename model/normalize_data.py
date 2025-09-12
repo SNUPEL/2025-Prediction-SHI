@@ -61,7 +61,7 @@ def standard_scaler(self, sheet_name, df_sheet):
 
             row_scalers_for_sheet[index] = scaler_row
 
-    self.scaler_dict[sheet_name] = row_scalers_for_sheet
+    self.scaler_for_sheet_dict[sheet_name] = row_scalers_for_sheet
 
     if self.config['scale_by'] == 'feature':
         return df_scaled

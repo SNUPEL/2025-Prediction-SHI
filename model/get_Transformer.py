@@ -143,6 +143,11 @@ def get_Transformer(self):
 
     y_pred_proba = self.model.predict(X_test)
     if y_pred_proba.shape[-1] == 1: y_pred_proba = y_pred_proba.flatten()
-    self.data.y_pred_proba = y_pred_proba
     y_pred_class = (y_pred_proba > self.config['threshold']).astype(int)
+
+    self.data.df_y_pred_proba = pd.DataFrame(
+        y_pred_proba,
+        index=self.data.name_test,
+        columns=['label']
+    )
     self.data.df_y_pred = pd.DataFrame(y_pred_class, index=self.data.name_test, columns=['label'])

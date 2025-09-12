@@ -7,6 +7,7 @@ from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.metrics import Recall
 from tensorflow.keras.layers import (Input, ConvLSTM2D, BatchNormalization, Flatten, Dense, Activation,
                                      Dropout, TimeDistributed, Add, Conv1D, Conv3D, LSTM, Bidirectional)
+from tensorflow.keras.callbacks import EarlyStopping
 from tensorflow.keras.regularizers import l2
 from sklearn.utils.class_weight import compute_class_weight
 from sklearn.utils import shuffle
@@ -82,61 +83,6 @@ def get_ConvLSTM(self):
     x = Flatten()(x)
     x = Dropout(model_params['dropout_rate'])(x)  # 최종 분류기 전 Dropout
 
-    ###################################
-    # for i, params in enumerate(model_params['convlstm_layers']):
-    #     # 현재 블록의 입력(shortcut으로 사용)
-    #     shortcut = x
-    #     layer_parmas = params.copy()
-    #     # ConvLSTM 레이어 (기존과 동일)
-    #     # kernel_width와 activation을 params에서 분리
-    #     kernel_width = layer_parmas.pop('kernel_width')
-    #     activation_func = layer_parmas.pop('activation', 'relu')  # 설정에 activation이 없으면 relu 기본 사용
-    #
-    #     x = ConvLSTM2D(kernel_size=(input_shape[1], kernel_width), **layer_parmas)(x)
-    #
-    #     # 프로젝션: 입력(shortcut)과 출력(x)의 채널(필터 수)이 다르면 차원을 맞춰줌
-    #     if shortcut.shape[-1] != x.shape[-1]:
-    #         shortcut = Conv3D(filters=layer_parmas['filters'], kernel_size=1, padding='same')(shortcut)
-    #
-    #     # 잔차 연결 (입력과 출력을 더함)
-    #     x = Add()([x, shortcut])
-    #     x = Activation(activation_func)(x)  # 활성화 함수는 Add 이후에 적용
-    #     x = Dropout(model_params['dropout_rate'])(x)
-    #
-    #     # --- 2. 차원 축소 (기존과 동일) ---
-    # x = TimeDistributed(Flatten())(x)
-    #
-    # # --- 3. Bidirectional LSTM 레이어 블록 with 잔차 연결 ---
-    # for i, params in enumerate(model_params['bilstm_layers']):
-    #     # 마지막 BiLSTM 레이어는 return_sequences=False 이므로 잔차 연결을 적용하지 않음
-    #     layer_parmas = params.copy()
-    #     if not layer_parmas.get('return_sequences', False) and i == len(model_params['bilstm_layers']) - 1:
-    #         regularizer = l2(layer_parmas.pop('l2_reg'))
-    #         x = Bidirectional(LSTM(kernel_regularizer=regularizer, **layer_parmas))(x)
-    #         x = Dropout(model_params['dropout_rate'])(x)
-    #         break
-    #
-    #     # 현재 블록의 입력(shortcut으로 사용)
-    #     shortcut = x
-    #
-    #     # BiLSTM 레이어 (기존과 동일)
-    #     regularizer = l2(layer_parmas.pop('l2_reg'))
-    #     activation_func = layer_parmas.pop('activation', 'relu')
-    #
-    #     x = Bidirectional(LSTM(kernel_regularizer=regularizer, **layer_parmas))(x)
-    #
-    #     # 프로젝션: 입력(shortcut)과 출력(x)의 유닛 수가 다르면 차원을 맞춰줌
-    #     if shortcut.shape[-1] != x.shape[-1]:
-    #         # BiLSTM 출력 차원은 units * 2 이므로, 필터 수를 맞춰줌
-    #         shortcut = Conv1D(filters=layer_parmas['units'] * 2, kernel_size=1, padding='same')(shortcut)
-    #
-    #     # 잔차 연결
-    #     x = Add()([x, shortcut])
-    #     x = Activation(activation_func)(x)
-    #     x = Dropout(model_params['dropout_rate'])(x)
-    ###################################
-
-
     #######################################
     # # ConvLSTM 레이어
     # for params in model_params['convlstm_layers']:
@@ -161,7 +107,18 @@ def get_ConvLSTM(self):
     self.model.compile(optimizer=optimizer, loss=compile_params['loss'], metrics=compile_params['metrics'])
     self.model.summary()
 
-    history = self.model.fit(x=X_train_5d, y=y_train, validation_data=valid_set, **self.config['fit_parameter'])
+    early_stopping_callback = EarlyStopping(
+        monitor='val_loss',
+        patience=10,
+        verbose=1,
+        restore_best_weights=True
+    )
+
+    fit_params = self.config['fit_parameter'].copy()
+    fit_params['callbacks'] = [early_stopping_callback]
+
+    history = self.model.fit(x=X_train_5d, y=y_train, validation_data=valid_set, **fit_params)
+
     self.history = {
         'train_loss': history.history['loss'],
         'val_loss': history.history['val_loss'],

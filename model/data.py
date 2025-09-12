@@ -55,6 +55,7 @@ class Data:
         self.df_train_dict_after_sampling = dict()
 
         self.scaler_dict = dict()
+        self.scaler_for_sheet_dict = dict()
 
     def load_data(self):
         load_data(self)
