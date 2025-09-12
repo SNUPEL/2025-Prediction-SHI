@@ -4,7 +4,6 @@ import tensorflow as tf
 from tensorflow.keras.models import Model
 from tensorflow.keras.layers import (Input, Dense, GlobalAveragePooling1D, Dropout, LayerNormalization, Add)
 from tensorflow.keras.optimizers import AdamW
-# from tensorflow_addons.optimizers import AdamW
 from tensorflow.keras.metrics import Recall
 from tensorflow.keras.callbacks import EarlyStopping
 
@@ -97,8 +96,7 @@ def get_Transformer(self):
     y_valid = np.array(list(self.data.df_y_valid_dict.values()))
     X_test = np.array(list(self.data.df_x_test_matrix_dict.values()))
 
-    # Transpose와 astype을 한 번에 처리하여 이중 변환 오류 수정
-    # (batch, features, time) -> (batch, time, features) 형태로 변환 후 float32 타입 지정
+    # (batch, features, time) -> (batch, time, features)
     X_train = X_train.transpose(0, 2, 1).astype('float32')
     y_train = y_train.astype('float32')
     X_valid = X_valid.transpose(0, 2, 1).astype('float32')
@@ -108,8 +106,12 @@ def get_Transformer(self):
     valid_set = (X_valid, y_valid)
 
     input_shape = X_train.shape[1:]
-    input_layer = Input(shape=input_shape)
     model_params = self.config['model_parameter']
+
+    # FFN 차원(ff_dim)을 embed_dim의 4배로 자동 설정
+    model_params['ff_dim'] = model_params['embed_dim'] * 4
+
+    input_layer = Input(shape=input_shape)
     x = Dense(model_params['embed_dim'])(input_layer)
     x = PositionalEncoding(position=input_shape[0], d_model=model_params['embed_dim'])(x)
     for _ in range(model_params['num_blocks']):
@@ -126,17 +128,20 @@ def get_Transformer(self):
     self.model.compile(optimizer=optimizer, loss=compile_params['loss'], metrics=compile_params['metrics'])
     self.model.summary()
 
-    early_stopping_callback = EarlyStopping(
-        monitor='val_loss',
-        patience=3,
-        verbose=1,
-        restore_best_weights=True
-    )
+    # EarlyStopping 사용 여부에 따라 콜백 리스트를 설정
+    callbacks = []
+    if self.config.get('use_early_stopping', False):
+        callbacks.append(EarlyStopping(
+            monitor='val_loss',
+            patience=3,
+            verbose=1,
+            restore_best_weights=True
+        ))
 
     fit_params = self.config['fit_parameter'].copy()
-    fit_params['callbacks'] = [early_stopping_callback]
+    fit_params['callbacks'] = callbacks
 
-    #  콜백이 포함된 'fit_params'를 사용하여 모델 학습
+    # 콜백이 포함된 'fit_params'를 사용하여 모델 학습
     history = self.model.fit(x=X_train, y=y_train, validation_data=valid_set, **fit_params)
 
     self.history = {'train_loss': history.history['loss'], 'val_loss': history.history['val_loss']}

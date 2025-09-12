@@ -21,7 +21,7 @@ def create_config():
     # 입력 데이터 기간(길이) 설정
     config['data_duration'] = 12
     # 예측하는 시점을 정의(해당 일자까지 데이터가 존재한다고 가정)
-    config['label_date'] = '2023-03-01'
+    config['label_date'] = '2023-09-01'
     # 라벨 판단 기준에 필요한 길이
     config['label_duration'] = 3
     # True면 경/중 경을 포함하지 않음 (label이 True인 기간만 제외, False인 기간은 사용)
@@ -106,11 +106,11 @@ def create_config():
             'SMOTE_parameter': {'sampling_strategy': 0.5, 'k_neighbors': 30},
             'TSSMOTE_parameter': {'sampling_strategy': 0.5, 'k_neighbors': 201},
             'model_parameter': {
-                'alpha': 0.5075335542740347,          # 규제 강도
+                'alpha': 0.9887,          # 규제 강도
                 'solver': 'auto',      # 계산 알고리즘
                 'tol': 1e-4            # 중단 기준 정밀도
             },
-            'class_weight': {0: 1, 1: 98}
+            'class_weight': {0: 6, 1: 770}
         },
 
         'SGDClassifier': {
@@ -337,7 +337,7 @@ def create_config():
             'back_end': 'tensorflow',
             'data_shape': 'matrix',
             'undersampling': 'ENN',
-            'ENN_parameter': {'sampling_strategy': 'auto', 'n_neighbors': 201},
+            'ENN_parameter': {'sampling_strategy': 'auto', 'n_neighbors': 30},
             'oversampling': 'Borderline-TSSMOTE',  # Borderline-TSSMOTE, TSSMOTE, SMOTE
             'SMOTE_parameter': {'sampling_strategy': 1.0, 'k_neighbors': 5},
             'TSSMOTE_parameter': {'sampling_strategy': 1.0, 'k_neighbors': 15},
@@ -345,12 +345,11 @@ def create_config():
                 'embed_dim': 128,         # 각 타임스텝의 피처를 임베딩할 차원
                 'num_blocks': 4,         # 쌓을 Transformer Encoder Block의 수
                 'num_heads': 8,          # Multi-Head Attention의 헤드 수
-                'ff_dim': 256,           # Encoder Block 내부 피드포워드 신경망의 차원
                 'dropout_rate': 0.1,
                 'output_layer': {'units': 1, 'activation': 'sigmoid'}
             },
             'compile_parameter': {
-                'learning_rate': 0.001,
+                'learning_rate': 0.0001,
                 'weight_decay': 0.01,
                 'loss': 'binary_crossentropy',
                 'metrics': ['accuracy', Recall(name='recall')]  # Recall 메트릭 추가
@@ -361,7 +360,8 @@ def create_config():
                 'class_weight': {0: 1, 1: 1},
                 'shuffle': True
             },
-            'threshold': 0.5
+            'threshold': 0.5,
+            'use_early_stopping': False,  # 콜백 사용 여부 설정
         },
 
         'ResNet': {
@@ -458,7 +458,7 @@ def create_config():
 
     # 결과 폴더 생성 (폴더가 없으면 생성)
     if not os.path.exists(config["result_folder_path"]):
-        os.mkdir(config["result_folder_path"])
+        os.makedirs(config["result_folder_path"])
 
     # 현재 설정 정보를 엑셀 파일로 저장
     config_df = pd.json_normalize(config, sep='_').transpose()
