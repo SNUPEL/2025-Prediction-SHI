@@ -86,7 +86,6 @@ def load_data(self):
         comparison_date = self.label_date
         if r_label and r_end_date is not None and r_end_date <= self.label_date:
             comparison_date = r_end_date  # 회사가 경영악화되었고 조정된 종료일이 label_date보다 같거나 이전이면 해당 종료일 사용
-        comparison_date -= pd.DateOffset(months=self.config['data_duration'])
 
         # company.date_range를 생성 r_start_date부터 comparison_date까지의 월별 날짜 리스트
         # 이 범위가 split_data 함수에서 각 회사의 date 순회 범위
