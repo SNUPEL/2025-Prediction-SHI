@@ -124,7 +124,7 @@ def create_company_level_predictions_case1(df):
         predicted_pattern = get_company_prediction_pattern(company_data)
         
         # 디버깅: 경영악화 회사 확인
-        if true_label in ['TTT', 'FTT']:  # 경영악화 회사
+        if true_label in ['TTT', 'FTT', 'FFT']:  # 경영악화 회사
             print(f"🏢 회사 {company_id}: {true_label} (경영악화)")
             print(f"   예측 패턴: {predicted_pattern}")
             print(f"   성공 여부: {final_prediction} ({'성공' if final_prediction else '실패'})")
@@ -170,7 +170,7 @@ def create_company_level_predictions_case2(df):
         predicted_pattern = get_company_prediction_pattern(company_data)
         
         # 디버깅: 경영악화 회사 확인
-        if true_label in ['TTT', 'FTT']:  # 경영악화 회사
+        if true_label in ['TTT', 'FTT', 'FFT']:  # 경영악화 회사
             print(f"🏢 회사 {company_id}: {true_label} (경영악화)")
             print(f"   예측 패턴: {predicted_pattern}")
             print(f"   성공 여부: {final_prediction} ({'성공' if final_prediction else '실패'})")
@@ -231,7 +231,7 @@ def create_confusion_matrices(df, company_df):
     ax2.set_ylabel('실제 라벨')
     
     plt.tight_layout()
-    plt.savefig('results/20250915_10h_53m_49s/comparison_confusion_matrix.png', 
+    plt.savefig('../results/20250915_10h_53m_49s/comparison_confusion_matrix.png', 
                 dpi=300, bbox_inches='tight')
     plt.show()
     
@@ -264,7 +264,7 @@ def create_company_confusion_matrix(company_df, title_suffix=""):
     # 파일명에 Case 정보 추가
     filename = f'company_prediction_confusion_matrix_{title_suffix.replace(" ", "_").replace("(", "").replace(")", "")}.png'
     plt.tight_layout()
-    plt.savefig(f'results/20250915_10h_53m_49s/{filename}', 
+    plt.savefig(f'../results/20250915_10h_53m_49s/{filename}', 
                 dpi=300, bbox_inches='tight')
     plt.show()
     
@@ -286,7 +286,7 @@ def create_original_confusion_matrix(df):
     plt.ylabel('실제 라벨', fontsize=12)
     
     plt.tight_layout()
-    plt.savefig('results/20250915_10h_53m_49s/original_prediction_confusion_matrix.png', 
+    plt.savefig('../results/20250915_10h_53m_49s/original_prediction_confusion_matrix.png', 
                 dpi=300, bbox_inches='tight')
     plt.show()
     
@@ -405,14 +405,14 @@ def create_three_way_comparison_plot(original_metrics, case1_metrics, case2_metr
                        ha='center', va='bottom', fontsize=9)
     
     plt.tight_layout()
-    plt.savefig('results/20250915_10h_53m_49s/three_way_comparison.png', 
+    plt.savefig('../results/20250915_10h_53m_49s/three_way_comparison.png', 
                 dpi=300, bbox_inches='tight')
     plt.show()
 
 
 
 def main():
-    file_path = "results/20250915_10h_53m_49s/predict_result.xlsx"
+    file_path = "../results/20250915_10h_53m_49s/predict_result.xlsx"
     
     # 1. 데이터 로드 및 분석
     print("1. 데이터 로드 중...")
@@ -439,7 +439,7 @@ def main():
     
     # 6. 결과 저장
     print("\n6. 결과 저장...")
-    output_file = "results/20250915_10h_53m_49s/predict_result_with_case1_case2_analysis.xlsx"
+    output_file = "../results/20250915_10h_53m_49s/predict_result_with_case1_case2_analysis.xlsx"
     with pd.ExcelWriter(output_file) as writer:
         df_merged_case1.to_excel(writer, sheet_name='원본_데이터_with_Case1', index=False)
         df_merged_case2.to_excel(writer, sheet_name='원본_데이터_with_Case2', index=False)
@@ -450,8 +450,8 @@ def main():
     
     # Case별 CSV 파일 저장
     print("\n6-1. Case별 CSV 파일 저장...")
-    case1_csv_file = "results/20250915_10h_53m_49s/case1_analysis.csv"
-    case2_csv_file = "results/20250915_10h_53m_49s/case2_analysis.csv"
+    case1_csv_file = "../results/20250915_10h_53m_49s/case1_analysis.csv"
+    case2_csv_file = "../results/20250915_10h_53m_49s/case2_analysis.csv"
     
     df_merged_case1.to_csv(case1_csv_file, index=False, encoding='utf-8-sig')
     df_merged_case2.to_csv(case2_csv_file, index=False, encoding='utf-8-sig')
@@ -482,8 +482,8 @@ def main():
     # 디버깅: Case 1 결과 확인
     print("\n=== Case 1 디버깅 ===")
     print(f"총 회사 수: {len(company_df_case1)}")
-    print(f"경영악화 회사 (TTT, FTT): {len(company_df_case1[company_df_case1['company_true_label'].isin(['TTT', 'FTT'])])}")
-    print(f"거래중 회사 (FFT, FFF): {len(company_df_case1[company_df_case1['company_true_label'].isin(['FFT', 'FFF'])])}")
+    print(f"경영악화 회사 (TTT, FTT): {len(company_df_case2[company_df_case2['company_true_label'].isin(['TTT', 'FTT', 'FFT'])])}")
+    print(f"거래중 회사 (FFT, FFF): {len(company_df_case2[company_df_case2['company_true_label'].isin(['FFF'])])}")
     print(f"예측 패턴 분포:")
     print(f"  TTT: {len(company_df_case1[company_df_case1['company_predicted_label'] == 'TTT'])}개")
     print(f"  TTF: {len(company_df_case1[company_df_case1['company_predicted_label'] == 'TTF'])}개")
@@ -535,8 +535,8 @@ def main():
     # 디버깅: Case 2 결과 확인
     print("\n=== Case 2 디버깅 ===")
     print(f"총 회사 수: {len(company_df_case2)}")
-    print(f"경영악화 회사 (TTT, FTT): {len(company_df_case2[company_df_case2['company_true_label'].isin(['TTT', 'FTT'])])}")
-    print(f"거래중 회사 (FFT, FFF): {len(company_df_case2[company_df_case2['company_true_label'].isin(['FFT', 'FFF'])])}")
+    print(f"경영악화 회사 (TTT, FTT): {len(company_df_case2[company_df_case2['company_true_label'].isin(['TTT', 'FTT', 'FFT'])])}")
+    print(f"거래중 회사 (FFT, FFF): {len(company_df_case2[company_df_case2['company_true_label'].isin(['FFF'])])}")
     print(f"예측 패턴 분포:")
     print(f"  TTT: {len(company_df_case2[company_df_case2['company_predicted_label'] == 'TTT'])}개")
     print(f"  TTF: {len(company_df_case2[company_df_case2['company_predicted_label'] == 'TTF'])}개")
@@ -591,12 +591,12 @@ def main():
         'f1_score': [original_metrics['f1_score'], case1_metrics['f1_score'], case2_metrics['f1_score']]
     })
     
-    metrics_output_file = "results/20250915_10h_53m_49s/performance_metrics_case1_case2.xlsx"
+    metrics_output_file = "../results/20250915_10h_53m_49s/performance_metrics_case1_case2.xlsx"
     metrics_df.to_excel(metrics_output_file, index=False)
     print(f"성능 지표가 저장되었습니다: {metrics_output_file}")
     
     # CSV로도 저장 (소수점 9자리까지)
-    metrics_csv_file = "results/20250915_10h_53m_49s/performance_metrics_case1_case2.csv"
+    metrics_csv_file = "../results/20250915_10h_53m_49s/performance_metrics_case1_case2.csv"
     metrics_df.to_csv(metrics_csv_file, index=False, float_format='%.9f')
     print(f"성능 지표 CSV가 저장되었습니다: {metrics_csv_file}")
     
