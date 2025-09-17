@@ -2,7 +2,8 @@ import pandas as pd
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras.models import Model
-from tensorflow.keras.layers import (Input, Dense, GlobalAveragePooling1D, Dropout, LayerNormalization, Add)
+# <<< 1. 'Layer' 임포트 추가
+from tensorflow.keras.layers import (Input, Dense, GlobalAveragePooling1D, Dropout, LayerNormalization, Add, Layer)
 from tensorflow.keras.optimizers import AdamW
 # from tensorflow_addons.optimizers import AdamW
 from tensorflow.keras.metrics import Recall
@@ -84,8 +85,39 @@ class TransformerEncoderBlock(tf.keras.layers.Layer):
         return Add()([out1, self.dropout2(ffn_output, training=training)])
 
 
+class AttentionPooling(Layer):
+    """
+    학습 가능한 가중치를 사용한 어텐션 풀링 레이어
+    """
+
+    def __init__(self, **kwargs):
+        super(AttentionPooling, self).__init__(**kwargs)
+        # 각 타임스텝의 중요도(score)를 계산하기 위한 Dense 레이어
+        self.score_dense = Dense(1, name='attention_score_dense')
+
+    def call(self, inputs):
+
+        # 1. 각 타임스텝별 중요도(score) 계산
+        scores = self.score_dense(inputs)
+
+        # 2. Softmax를 통과시켜 가중치(weight) 계산
+        weights = tf.nn.softmax(scores, axis=1)
+
+        # 3. 가중 평균(Weighted Average) 계산
+        weighted_inputs = inputs * weights
+
+        # 4. 시간 축(axis=1)에 대해 모두 합산
+        context_vector = tf.reduce_sum(weighted_inputs, axis=1)
+
+        return context_vector
+
+    def get_config(self):
+        config = super(AttentionPooling, self).get_config()
+        return config
+
+
 def get_Transformer(self):
-    """ Transformer 모델을 생성, 컴파일, 학습하고 예측합니다. (EarlyStopping 적용) """
+    """ Transformer 모델을 생성, 컴파일, 학습하고 예측합니다. (AttentionPooling 적용) """
     tf.random.set_seed(self.config['random_state'])
 
     if self.config.get('undersampling') or self.config.get('oversampling'):
@@ -119,7 +151,11 @@ def get_Transformer(self):
     for _ in range(model_params['num_blocks']):
         x = TransformerEncoderBlock(embed_dim=model_params['embed_dim'], num_heads=model_params['num_heads'],
                                     ff_dim=model_params['ff_dim'], rate=model_params['dropout_rate'])(x)
-    x = GlobalAveragePooling1D()(x)
+
+    ### === 3. GlobalAveragePooling1D -> AttentionPooling 으로 교체 === ###
+    # x = GlobalAveragePooling1D()(x)  # <-- 기존 코드
+    x = AttentionPooling()(x)  # <-- 수정된 코드
+
     x = Dropout(model_params['dropout_rate'])(x)
     output_layer = Dense(**model_params['output_layer'])(x)
     self.model = Model(inputs=input_layer, outputs=output_layer)

@@ -21,7 +21,7 @@ def create_config():
     # 입력 데이터 기간(길이) 설정
     config['data_duration'] = 12
     # 예측하는 시점을 정의(해당 일자까지 데이터가 존재한다고 가정)
-    config['label_date'] = '2023-03-01'
+    config['label_date'] = '2023-08-01'
     # 라벨 판단 기준에 필요한 길이
     config['label_duration'] = 3
     # True면 경/중 경을 포함하지 않음 (label이 True인 기간만 제외, False인 기간은 사용)
@@ -362,7 +362,7 @@ def create_config():
             'back_end': 'tensorflow',
             'data_shape': 'matrix',
             'undersampling': 'ENN',
-            'ENN_parameter': {'sampling_strategy': 'auto', 'n_neighbors': 31},
+            'ENN_parameter': {'sampling_strategy': 'auto', 'n_neighbors': 7}, # ENN_parameterfm 3,5,7,9 정도로 설정하는것을 추천합니다
             'oversampling': None,  # Borderline-TSSMOTE, TSSMOTE, SMOTE
             'SMOTE_parameter': {'sampling_strategy': 1.0, 'k_neighbors': 5},
             'TSSMOTE_parameter': {'sampling_strategy': 1.0, 'k_neighbors': 15},
