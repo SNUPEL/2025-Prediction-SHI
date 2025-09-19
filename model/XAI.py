@@ -108,21 +108,21 @@ def get_dice(config, data, model):
         return
 
     last_timestep_index = int(config['data_duration'] - 1)
-    last_timestep_index2 = int(config['data_duration'] - 2)
 
-    # 2개월 사용
-    # features_to_vary = [
-    #     col for col in feature_names
-    #     if (str(last_timestep_index) in col or str(last_timestep_index2) in col) and not any(
-    #         banned_word in col for banned_word in dice_params['features_to_ban'])
-    # ]
-
-    # 1개월 사용
+    # n개월 사용
     features_to_vary = [
         col for col in feature_names
-        if str(last_timestep_index) in col and not any(
-            banned_word in col for banned_word in dice_params['features_to_ban'])
+        # 조건 1과 2를 한 줄에 결합
+        if any(str(config['data_duration'] - i) in col for i in range(1, dice_params['month_length'] + 1)) and \
+           not any(word in col for word in dice_params['features_to_ban'])
     ]
+
+    # # 1개월 사용
+    # features_to_vary = [
+    #     col for col in feature_names
+    #     if str(last_timestep_index) in col and not any(
+    #         banned_word in col for banned_word in dice_params['features_to_ban'])
+    # ]
 
     if not features_to_vary:
         print(f"경고: 마지막 타임스텝({last_timestep_index}) 피처를 찾지 못했습니다. 전체 피처를 대상으로 합니다.")
@@ -141,11 +141,12 @@ def get_dice(config, data, model):
             base_feature_name = feature_name.rsplit('_', 1)[0]
 
             scaler = None
-            if config['scale_by'] == 'feature':
-                scaler = data.scaler_dict[base_feature_name]
-            elif config['scale_by'] == 'feature_and_company':
-                company_id = instance_name.split('_')[0]
-                scaler = data.scaler_for_sheet_dict[base_feature_name][company_id]
+            if config['scaler']:
+                if config['scale_by'] == 'feature':
+                    scaler = data.scaler_dict[base_feature_name]
+                elif config['scale_by'] == 'feature_and_company':
+                    company_id = instance_name.split('_')[0]
+                    scaler = data.scaler_for_sheet_dict[base_feature_name][company_id]
             if scaler:
                 scaled_value = single_query_instance[feature_name].iloc[0]
                 original_value = scaler.inverse_transform(np.array([[scaled_value]]))[0, 0]
@@ -178,6 +179,7 @@ def get_dice(config, data, model):
             )
             if dice_explain_single.cf_examples_list:
                 cf_examples_list.append(dice_explain_single.cf_examples_list[0])
+                print(f" - 샘플 '{instance_name}'에 대한 대안을 생성했습니다.")
             else:
                 print(f" - 샘플 '{instance_name}'에 대한 대안을 찾지 못했습니다. (결과 비어있음)")
 
@@ -209,11 +211,12 @@ def get_dice(config, data, model):
                     base_feature_name = feature_col.rsplit('_', 1)[0]
 
                     scaler = None
-                    if config['scale_by'] == 'feature':
-                        scaler = data.scaler_dict[base_feature_name]
-                    elif config['scale_by'] == 'feature_and_company':
-                        company_id = instance_name.split('_')[0]
-                        scaler = data.scaler_for_sheet_dict[base_feature_name][company_id]
+                    if config['scaler']:
+                        if config['scale_by'] == 'feature':
+                            scaler = data.scaler_dict[base_feature_name]
+                        elif config['scale_by'] == 'feature_and_company':
+                            company_id = instance_name.split('_')[0]
+                            scaler = data.scaler_for_sheet_dict[base_feature_name][company_id]
 
                     if scaler:
                         scaled_values = total_result[feature_col].values.reshape(-1, 1)

@@ -13,7 +13,7 @@ def create_config():
     config['random_state'] = 42  # 랜덤 시드
 
     # 데이터 파일 및 보조 파일 경로 설정
-    config['data_file_path'] = '../data/사내협력사 현황(철수사&거래 협력사)_ Data_종합평가수정본.xlsx'
+    config['data_file_path'] = '../data/사내협력사 현황(철수사&거래 협력사)_ Data_최종수정본_3.xlsx'
     config['sub_data_file_path'] = '../data/사내협력사 현황(철수사&거래 협력사)_출근인력(추가).xlsx'
 
     # 데이터 사용의 가장 이른 시작 시점 설정
@@ -21,7 +21,7 @@ def create_config():
     # 입력 데이터 기간(길이) 설정
     config['data_duration'] = 12
     # 예측하는 시점을 정의(해당 일자까지 데이터가 존재한다고 가정)
-    config['label_date'] = '2023-08-01'
+    config['label_date'] = '2023-03-01'
     # 라벨 판단 기준에 필요한 길이
     config['label_duration'] = 3
     # True면 경/중 경을 포함하지 않음 (label이 True인 기간만 제외, False인 기간은 사용)
@@ -36,7 +36,7 @@ def create_config():
     #                             '4대보험 가입자', '본공률(4대보험)', '안전사고 건수(중간, 낮음)', '안전사고 건수(높음)',
     #                             '공수능률',  '시급,월급제 인원', '투입인원', '환산능률']
     config['sheet_ban_list'] = ['경영 영향1', '경영 영향2', '종합평가', '본공률(4대보험)', '본공률(시급월급)',
-                                '4대보험 가입자', '안전사고 건수(중간, 낮음)', '안전사고 건수(높음)']
+                                '4대보험 가입자', '안전사고 건수(중간, 낮음)', '안전사고 건수(높음)', '종합평가_점수_과거']
 
     # 정규화: None, standard
     config['scaler'] = 'standard'
@@ -254,9 +254,9 @@ def create_config():
             'data_shape': 'matrix',
             'undersampling': 'ENN',
             'ENN_parameter': {'sampling_strategy': 'auto', 'n_neighbors': 100},
-            'oversampling': 'TSSMOTE',
+            'oversampling': None,
             'SMOTE_parameter': {'sampling_strategy': 0.5, 'k_neighbors': 30},
-            'TSSMOTE_parameter': {'sampling_strategy': 1, 'k_neighbors': 10},
+            'TSSMOTE_parameter': {'sampling_strategy': 0.5, 'k_neighbors': 10},
             'sub_window_size': 4,
             'model_parameter': {
                 'dropout_rate': 0.3,
@@ -273,15 +273,15 @@ def create_config():
                 'output_layer': {'units': 1, 'activation': 'sigmoid'}
             },
             'compile_parameter': {
-                'learning_rate': 0.001,
+                'learning_rate': 0.0001,
                 'clipnorm': 1.0,
                 'loss': 'binary_crossentropy',
                 'metrics': ['accuracy', Recall()]
             },
             'fit_parameter': {
-                'epochs': 50,
+                'epochs': 100,
                 'batch_size': 64,
-                'class_weight': {0: 1, 1: 30},
+                'class_weight': {0: 1, 1: 20},
                 'shuffle': True
             },
             'threshold': 0.5
@@ -362,7 +362,7 @@ def create_config():
             'back_end': 'tensorflow',
             'data_shape': 'matrix',
             'undersampling': 'ENN',
-            'ENN_parameter': {'sampling_strategy': 'auto', 'n_neighbors': 7}, # ENN_parameterfm 3,5,7,9 정도로 설정하는것을 추천합니다
+            'ENN_parameter': {'sampling_strategy': 'auto', 'n_neighbors': 7},
             'oversampling': None,  # Borderline-TSSMOTE, TSSMOTE, SMOTE
             'SMOTE_parameter': {'sampling_strategy': 1.0, 'k_neighbors': 5},
             'TSSMOTE_parameter': {'sampling_strategy': 1.0, 'k_neighbors': 15},
@@ -456,11 +456,14 @@ def create_config():
     config.update(model_config[config['model_type']])
 
     config['dice_parameter'] = {
-        'percentage_change': 0.05,
+        # 실험 2: 변동가능 범위
+        'percentage_change': 0.3,
+        # 실험 1: 개월 수 6 -> 3
+        'month_length': 6,
         'method': 'random',  # 설명 방식 ('random', 'genetic', 'kdtree')
         # 설명할 대상: 'predicted_positives', 'misclassified'
         'query_instance_mode': 'predicted_positives',
-        'total_CFs': 2,  # 찾을 대안의 최대 개수
+        'total_CFs': 1,  # 찾을 대안의 최대 개수
         'desired_class': 'opposite',  # 반대 클래스로 바뀌는 대안을 찾음
         'features_to_ban': ['기성매출', '종합평가', '경영 영향', '안전사고']  # 변경을 허용하지 않는 특성 리스트
     }
