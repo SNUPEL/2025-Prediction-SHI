@@ -37,7 +37,7 @@ def get_RidgeClassifier(self):
         columns=['label']
     )
 
-    if self.config['save_model']:
+    if self.config['save_model']:       # 학습한 모델 저장
         joblib.dump(self.model, self.config['result_folder_path'] + '/RidgeClassifier model.joblib')
 
 
@@ -56,5 +56,5 @@ def get_SGDClassifier(self):
         columns=['label']
     )
 
-    if self.config['save_model']:
+    if self.config['save_model']:       # 학습한 모델 저장
         joblib.dump(self.model, self.config['result_folder_path'] + '/SGDClassifier model.joblib')

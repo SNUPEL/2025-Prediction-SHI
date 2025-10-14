@@ -10,21 +10,20 @@ from sklearn.metrics import make_scorer, recall_score, accuracy_score, fbeta_sco
 
 def objective(self, trial):
     # AdaBoostClassifier 하이퍼파라미터 탐색 공간 정의
-    n_estimators = trial.suggest_int('n_estimators', 500, 3000, step=500)
-    learning_rate = trial.suggest_float('learning_rate', 0.0001, 0.01, log=True)  # 0.001에서 1.0 사이
+    n_estimators = trial.suggest_int('n_estimators', 500, 3000, step=500)       # estimator의 개수, 500(step) 간격으로 500~3000 사이의 정수를 탐색
+    learning_rate = trial.suggest_float('learning_rate', 0.0001, 0.01, log=True)  # 학습률, 0.0001~0.01 사이의 실수를 탐색, log=True로 설정함으로써 작은 값이 선택될 확률을 높임
 
-    # 기본 추정기(DecisionTree)의 max_depth도 튜닝 가능
-    base_estimator_max_depth = trial.suggest_int('base_estimator_max_depth', 1, 4)  # 보통 1-4 사이
+
+    base_estimator_max_depth = trial.suggest_int('base_estimator_max_depth', 1, 4)  # 기본 추정기(DecisionTree)의 최대 한도 깊이, 1~4 사이의 정수를 탐색
     # base_estimator_min_samples_split = trial.suggest_int('base_estimator_min_samples_split', 2, 4)
 
-    base_est = DecisionTreeClassifier(max_depth=base_estimator_max_depth)
+    base_est = DecisionTreeClassifier(max_depth=base_estimator_max_depth)       # 기본 추정기 설정
 
     model = AdaBoostClassifier(
         estimator=base_est,  # scikit-learn 1.2 이상에서는 'estimator' 사용
         n_estimators=n_estimators,
         learning_rate=learning_rate,
-        algorithm='SAMME.R',  # SAMME.R이 일반적으로 성능이 더 좋음
-        random_state=self.config.get('random_state', 42),  # config에 없으면 기본값 42 사용
+        random_state=self.config.get('random_state', 42),  # 랜덤시드 값, config에 설정되어 있지 않으면 기본값 42 사용
     )
 
     # company_id 제외하고 X 데이터 준비
@@ -45,10 +44,10 @@ def objective(self, trial):
     }
 
     try:
-        scores = cross_validate(model, X, y, cv=cv, scoring=scoring, n_jobs=-1)
+        scores = cross_validate(model, X, y, cv=cv, scoring=scoring, n_jobs=-1)     # 교차 검증 실행->각 변수에 대해 점수화
 
-        mean_accuracy = np.mean(scores['test_accuracy'])
-        mean_recall_positive = np.mean(scores['test_recall_positive'])
+        mean_accuracy = np.mean(scores['test_accuracy'])        # 해당 trial의 평균 accuracy
+        mean_recall_positive = np.mean(scores['test_recall_positive'])      # 해당 trial의 평균 recall
         mean_f2_positive = np.mean(scores['test_f2_positive'])
 
         # mean_train_accuracy = np.mean(scores['train_accuracy'])
@@ -81,7 +80,7 @@ def get_AdaBoostClassifier_optimized(self):  # 함수 이름을 변경하거나 
     best_trial = study.best_trial
     print(f"  최적 F2-score (목표): {best_trial.value:.4f}")
     print("  최적 하이퍼파라미터:")
-    for key, value in best_trial.params.items():
+    for key, value in best_trial.params.items():        # n_estimators, learning_rate, base_estimator_max_depth의 값 표시
         print(f"    {key}: {value}")
 
     # 저장된 사용자 속성(다른 평가지표) 출력
@@ -101,7 +100,6 @@ def get_AdaBoostClassifier_optimized(self):  # 함수 이름을 변경하거나 
         estimator=best_base_estimator,
         # min_samples_split= base_estimator_min_samples_split,
         **best_params,  # n_estimators, learning_rate 등
-        algorithm='SAMME.R',
         random_state=self.config.get('random_state', 42)
     )
 
@@ -123,7 +121,7 @@ def get_AdaBoostClassifier_optimized(self):  # 함수 이름을 변경하거나 
 
     self.models_hyperparameters = self.model.get_params()
 
-    if self.config.get('save_model', False):
+    if self.config.get('save_model', False):        # 학습된 모델 저장
         folder_path = self.config.get('result_folder_path', '.')
         # import os; os.makedirs(folder_path, exist_ok=True) # 폴더가 없다면 생성
         model_path = f"{folder_path}/AdaBoostClassifier_optimized_model.joblib"

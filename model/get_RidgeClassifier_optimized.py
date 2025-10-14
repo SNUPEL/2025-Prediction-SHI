@@ -43,8 +43,8 @@ def objective(self, trial):
     try:
         scores = cross_validate(model, X, y, cv=cv, scoring=scoring, n_jobs=-1)     # 교차 검증 실행->각 변수에 대해 점수화
 
-        mean_accuracy = np.mean(scores['test_accuracy'])        # 평균 accuracy
-        mean_recall_positive = np.mean(scores['test_recall_positive'])      # 평균 recall
+        mean_accuracy = np.mean(scores['test_accuracy'])        # 해당 trial의 평균 accuracy
+        mean_recall_positive = np.mean(scores['test_recall_positive'])      # 해당 trial의 평균 recall
         mean_f2_positive = np.mean(scores['test_f2_positive'])
 
         # mean_train_accuracy = np.mean(scores['train_accuracy'])
@@ -131,7 +131,7 @@ def get_RidgeClassifier_optimized(self):
     print('가중치가 가장 큰 feature:', max_feature, ' |  값:', np.amax(self.model.coef_))
     print('가중치가 가장 작은 feature:', min_feature, ' |  값:', np.amin(self.model.coef_))
 
-    if self.config.get('save_model', False):
+    if self.config.get('save_model', False):        # 학습한 모델 저장
         folder_path = self.config.get('result_folder_path', '.')
         # import os; os.makedirs(folder_path, exist_ok=True) # 폴더가 없다면 생성
         model_path = f"{folder_path}/RidgeClassifier_optimized_model.joblib"

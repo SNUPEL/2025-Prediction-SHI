@@ -68,7 +68,7 @@ def create_config():
             'TSSMOTE_parameter': {'sampling_strategy': 0.5, 'k_neighbors': 30},
             'model_parameter': {'n_estimators': 1000, 'max_depth': 25, 'min_samples_split': 2,
                                 'min_samples_leaf': 1, 'max_features': 'sqrt'},
-            'class_weight': {0: 1, 1: 1000}
+            'class_weight': {0: 1, 1: 1000}     # 클래스별 가중치 ('balanced', {0(거래중): a, 1(경영악화): b}(a, b는 자연수))
         },
 
         'AdaBoostClassifier': {
@@ -79,9 +79,9 @@ def create_config():
             'oversampling': 'SMOTE',
             'SMOTE_parameter': {'sampling_strategy': 0.5, 'k_neighbors': 30},
             'TSSMOTE_parameter': {'sampling_strategy': 0.5, 'k_neighbors': 30},
-            'model_parameter': {'n_estimators': 1000, "learning_rate": 0.001},
-            'estimator_parameter': {'max_depth': 2, 'min_samples_split': 2},
-            'class_weight': {0: 1, 1: 1000}
+            'model_parameter': {'n_estimators': 1000, "learning_rate": 0.001},      # n_estimators: estimator의 개수, learning_rate: 학습률
+            'estimator_parameter': {'max_depth': 2, 'min_samples_split': 2},    # estimator로 사용하는 DecisionTreeClassifier의 파라미터      # max_depth: 트리의 최대 한도 깊이, min_samples_split: 자식 노드를 갖기 위한 최소한의 데이터 개수
+            'class_weight': {0: 1, 1: 1000}     # 클래스별 가중치 ('balanced', {0(거래중): a, 1(경영악화): b}(a, b는 자연수))
         },
 
         'ExtraTreesClassifier': {
@@ -94,7 +94,7 @@ def create_config():
             'TSSMOTE_parameter': {'sampling_strategy': 0.5, 'k_neighbors': 30},
             'model_parameter': {'n_estimators': 1000, 'max_depth': 50, 'min_samples_split': 2,
                                 'min_samples_leaf': 1, 'max_features': 'sqrt'},
-            'class_weight': {0: 1, 1: 1000}
+            'class_weight': {0: 1, 1: 1000}     # 클래스별 가중치 ('balanced', {0(거래중): a, 1(경영악화): b}(a, b는 자연수))
         },
 
         'RidgeClassifier': {
