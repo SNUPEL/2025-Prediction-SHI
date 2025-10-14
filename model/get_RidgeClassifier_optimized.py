@@ -10,7 +10,7 @@ from sklearn.metrics import make_scorer, recall_score, accuracy_score, fbeta_sco
 
 def objective(self, trial):
     # RidgeClassifer의 class_weight 최적화
-    class_weight_False = trial.suggest_int("class_weight_False", 1, 1000)
+    class_weight_False = trial.suggest_int("class_weight_False", 1, 2000)
     class_weight_True = trial.suggest_int("class_weight_True", 1, 1000)
     class_weight = {0: class_weight_False, 1: class_weight_True}
 
@@ -128,8 +128,8 @@ def get_RidgeClassifier_optimized(self):
     min_feature = self.model.feature_names_in_[min_feature_idx]
 
     print('\n=== Feature별 계수 분석 결과 ===')
-    print('가중치가 가장 큰 feature:', max_feature, ' 값:', np.amax(self.model.coef_))
-    print('가중치가 가장 작은 feature:', min_feature, ' 값:', np.amin(self.model.coef_))
+    print('가중치가 가장 큰 feature:', max_feature, ' |  값:', np.amax(self.model.coef_))
+    print('가중치가 가장 작은 feature:', min_feature, ' |  값:', np.amin(self.model.coef_))
 
     if self.config.get('save_model', False):
         folder_path = self.config.get('result_folder_path', '.')
