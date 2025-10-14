@@ -21,7 +21,7 @@ def create_config():
     # 입력 데이터 기간(길이) 설정
     config['data_duration'] = 12
     # 예측하는 시점을 정의(해당 일자까지 데이터가 존재한다고 가정)
-    config['label_date'] = '2023-03-01'
+    config['label_date'] = '2024-06-01'
     # 라벨 판단 기준에 필요한 길이
     config['label_duration'] = 3
     # True면 경/중 경을 포함하지 않음 (label이 True인 기간만 제외, False인 기간은 사용)
@@ -53,9 +53,9 @@ def create_config():
     # ML model: 'RandomForestClassifier', 'AdaBoostClassifier', 'ExtraTreesClassifier',
     # 'RidgeClassifier', 'SGDClassifier', 'XGBClassifier', 'SVC', 'nuSVC', 'VotingClassifier'
     # DL model: 'ConvLSTM', 'MultiChannelCNNLSTM', 'Transformer', 'ResNet', 'MLP_Mixer', 'AutoEncoder'
-    config['model_type'] = 'Transformer'  # 사용할 모델 타입
+    config['model_type'] = 'RidgeClassifier'  # 사용할 모델 타입
     config['shap_analysis'] = True
-    config['DiCE'] = True  # True, False
+    config['DiCE'] = False  # True, False
 
     model_config = {
         'RandomForestClassifier': {
@@ -105,12 +105,14 @@ def create_config():
             'oversampling': None,
             'SMOTE_parameter': {'sampling_strategy': 0.5, 'k_neighbors': 30},
             'TSSMOTE_parameter': {'sampling_strategy': 0.5, 'k_neighbors': 201},
+            # get_RidgeClassifier_optimized를 이용해서 최적화한 파라미터(label_date: 2023-03-01 기준)
             'model_parameter': {
                 'alpha': 0.9887,          # 규제 강도
-                'solver': 'auto',      # 계산 알고리즘
-                'tol': 1e-4            # 중단 기준 정밀도
+                'solver': 'auto',      # 계산 알고리즘 ('auto', 'svd', 'cholesky', 'sparse_cg', 'lsqr', 'sag', 'saga', 'lbfgs')
+                'tol': 1e-4            # 중단 기준 정밀도 ('svd', 'cholesky', 'sparse_cg', 'lsqr', 'sag', 'saga', 'lbfgs', 지정 float 값)
             },
-            'class_weight': {0: 6, 1: 770}
+            'class_weight': {0: 6, 1: 770}      # 클래스별 가중치 ('balanced', {0(거래중): a, 1(경영악화): b}(a, b는 자연수))
+
         },
 
         'SGDClassifier': {
@@ -122,13 +124,13 @@ def create_config():
             'SMOTE_parameter': {'sampling_strategy': 0.5, 'k_neighbors': 30},
             'TSSMOTE_parameter': {'sampling_strategy': 0.5, 'k_neighbors': 30},
             'model_parameter': {
-                'loss': 'hinge',      # 손실 함수 ('hinge': 선형 SVM, 'log_loss': 로지스틱 회귀)
-                'penalty': 'l2',       # 규제 종류 ('l2', 'l1', 'elasticnet')
+                'loss': 'hinge',      # 손실 함수 ('hinge', 'log_loss', 'modified_huber', 'squared_hinge', 'perceptron', 'squared_error', 'huber', 'epsilon_insensitive', 'squared_epsilon_insensitive')
+                'penalty': 'l2',       # 규제 종류 ('l2', 'l1', 'elasticnet', None)
                 'alpha': 0.0001,       # 규제 강도
                 'max_iter': 1000,      # 최대 반복 횟수(에포크)
-                'learning_rate': 'optimal'  # 학습률 스케줄
+                'learning_rate': 'optimal'  # 학습률 스케줄 ('constant', 'optimal', 'invscaling', 'adaptive')
             },
-            'class_weight': {0: 1, 1: 1000}  # balanced 가능
+            'class_weight': {0: 1, 1: 1000}  # 클래스별 가중치 ('balanced', {0(거래중): a, 1(경영악화): b}(a, b는 자연수))
         },
 
         'XGBClassifier': {
@@ -210,7 +212,7 @@ def create_config():
                 'tol': 1e-4  # 중단 기준 정밀도
             },
             'model_parameter': {
-                'voting': 'hard',   # voting 수준: 소프트 보팅(soft)/하드 보팅(hard)
+                'voting': 'hard',   # voting 수준: soft(소프트 보팅)/hard(하드 보팅)
                 'weights': [2, 3, 3, 5],   # estimator 가중치, SVC-nuSVC-AdaBoost-Ridge 순서
                 'n_jobs': None,       # 사용할 cpu 코어 개수
                 'flatten_transform': True       # voting이 soft일 때만 사용, transform output에 영향을 미치는 요소
@@ -459,7 +461,7 @@ def create_config():
         # 실험 2: 변동가능 범위
         'percentage_change': 0.3,
         # 실험 1: 개월 수 6 -> 3
-        'month_length': 6,
+        'month_length': 4,
         'method': 'random',  # 설명 방식 ('random', 'genetic', 'kdtree')
         # 설명할 대상: 'predicted_positives', 'misclassified'
         'query_instance_mode': 'predicted_positives',

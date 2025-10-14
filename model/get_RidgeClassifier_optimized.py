@@ -10,14 +10,14 @@ from sklearn.metrics import make_scorer, recall_score, accuracy_score, fbeta_sco
 
 def objective(self, trial):
     # RidgeClassifer의 class_weight 최적화
-    class_weight_False = trial.suggest_int("class_weight_False", 1, 2000)
-    class_weight_True = trial.suggest_int("class_weight_True", 1, 1000)
+    class_weight_False = trial.suggest_int("class_weight_False", 1, 2000)       # '거래중' 클래스에 부여하는 가중치, 1~2000 범위의 정수를 탐색
+    class_weight_True = trial.suggest_int("class_weight_True", 1, 2000)     # '경영악화' 클래스에 부여하는 가중치, 1~2000 범위의 정수를 탐색
     class_weight = {0: class_weight_False, 1: class_weight_True}
 
     # RidgeClassifier의 alpha 최적화
-    alpha = trial.suggest_float("alpha", 0.1, 1)
+    alpha = trial.suggest_float("alpha", 0.1, 1)    # 규제 강도, 0.1~1 사이의 실수를 탐색
 
-    model = RidgeClassifier(
+    model = RidgeClassifier(        # trial을 통해 선택된 class_weight, alpha를 기반으로 RidgeClassifier 싫행
         alpha=alpha,
         random_state=self.config['random_state'],
         class_weight=class_weight
@@ -41,10 +41,10 @@ def objective(self, trial):
     }
 
     try:
-        scores = cross_validate(model, X, y, cv=cv, scoring=scoring, n_jobs=-1)
+        scores = cross_validate(model, X, y, cv=cv, scoring=scoring, n_jobs=-1)     # 교차 검증 실행->각 변수에 대해 점수화
 
-        mean_accuracy = np.mean(scores['test_accuracy'])
-        mean_recall_positive = np.mean(scores['test_recall_positive'])
+        mean_accuracy = np.mean(scores['test_accuracy'])        # 평균 accuracy
+        mean_recall_positive = np.mean(scores['test_recall_positive'])      # 평균 recall
         mean_f2_positive = np.mean(scores['test_f2_positive'])
 
         # mean_train_accuracy = np.mean(scores['train_accuracy'])
@@ -75,7 +75,7 @@ def get_RidgeClassifier_optimized(self):
     print("\n최적화 결과:")
     best_trial = study.best_trial
     print(f"  최적 F2-score (목표): {best_trial.value:.4f}")
-    print("  최적 하이퍼파라미터:")
+    print("  최적 하이퍼파라미터:")      # alpha, class_weight_False, class_weight_True의 값 표시
     for key, value in best_trial.params.items():
         print(f"    {key}: {value}")
 
@@ -116,15 +116,15 @@ def get_RidgeClassifier_optimized(self):
 
     self.models_hyperparameters = self.model.get_params()
 
-    # feature별 가중치 데이터프레임 생성
+    # feature별 가중치(계수) 데이터프레임 생성
     df_features = pd.DataFrame({'Feature_name': self.model.feature_names_in_, 'Feature_coef': self.model.coef_})
-    file_path = self.config["result_folder_path"] + '/Ridge_features_coef.xlsx'
+    file_path = self.config["result_folder_path"] + '/Ridge_features_coef.xlsx'     # 결과 폴더에 feature별 계수 파일 저장
     df_features.to_excel(file_path, index=False)
 
-    max_feature_idx = np.where(self.model.coef_ == np.amax(self.model.coef_))[0][0]
+    max_feature_idx = np.where(self.model.coef_ == np.amax(self.model.coef_))[0][0]     # 가장 계수가 큰 feature
     max_feature = self.model.feature_names_in_[max_feature_idx]
 
-    min_feature_idx = np.where(self.model.coef_ == np.amin(self.model.coef_))[0][0]
+    min_feature_idx = np.where(self.model.coef_ == np.amin(self.model.coef_))[0][0]     # 가장 계수가 작은 feature
     min_feature = self.model.feature_names_in_[min_feature_idx]
 
     print('\n=== Feature별 계수 분석 결과 ===')
