@@ -80,7 +80,7 @@ def get_AdaBoostClassifier_optimized(self):  # 함수 이름을 변경하거나 
     best_trial = study.best_trial
     print(f"  최적 F2-score (목표): {best_trial.value:.4f}")
     print("  최적 하이퍼파라미터:")
-    for key, value in best_trial.params.items():        # n_estimators, learning_rate, base_estimator_max_depth의 값 표시
+    for key, value in best_trial.params.items():        # n_estimators, learning_rate, base_estimator_max_depth의 값 출력
         print(f"    {key}: {value}")
 
     # 저장된 사용자 속성(다른 평가지표) 출력

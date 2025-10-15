@@ -9,27 +9,27 @@ from sklearn.metrics import make_scorer, recall_score, accuracy_score, fbeta_sco
 
 
 def objective(self, trial):
-    if self.config['model_type'] == 'SVC':
+    if self.config['model_type'] == 'SVC':      # 선택된 모델이 SVC일 경우 실행
         # SVC 하이퍼파라미터 탐색 공간 정의
-        C = trial.suggest_float('C', 0.1, 0.2)
+        C = trial.suggest_float('C', 0.1, 0.2)      # 규제 파라미터, 0.1~0.2 사이의 실수를 탐색
 
         # SVC의 class_weight 최적화
         # class_weight_False = trial.suggest_int("class_weight_False", 1, 10)
-        class_weight_False = 1
-        class_weight_True = trial.suggest_int("class_weight_True", 700, 800)
+        class_weight_False = 1      # '거래중' 클래스에 부여하는 가중치, 1로 고정
+        class_weight_True = trial.suggest_int("class_weight_True", 700, 800)        # '경영악화' 클래스에 부여하는 가중치, 700~800 사이의 정수를 탐색
         class_weight = {0: class_weight_False, 1: class_weight_True}
 
-        model = SVC(
+        model = SVC(        # trial을 통해 선택된 C, class_weight를 기반으로 SVC 실행
             C=C,
             class_weight=class_weight,
             random_state=self.config.get('random_state', 42),  # config에 없으면 기본값 42 사용
         )
-    elif self.config['model_type'] == 'nuSVC':
-        class_weight_False = trial.suggest_int("class_weight_False", 1, 10)
+    elif self.config['model_type'] == 'nuSVC':      # 선택된 모델이 nuSVC일 경우 실행
+        class_weight_False = trial.suggest_int("class_weight_False", 1, 10)     # '거래중' 클래스에 부여하는 가중치, 1~10 사이의 정수를 탐색
         # class_weight_False = 1
-        class_weight_True = trial.suggest_int("class_weight_True", 700, 800)
+        class_weight_True = trial.suggest_int("class_weight_True", 700, 800)    # '경영악화' 클래스에 부여하는 가중치, 700~800 사이의 정수를 탐색
         class_weight = {0: class_weight_False, 1: class_weight_True}
-        model = NuSVC(
+        model = NuSVC(      # trial을 통해 선택된 class_weight를 기반으로 nuSVC 실행
             nu=0.01,
             class_weight=class_weight,
             random_state=self.config.get('random_state', 42)
@@ -53,10 +53,10 @@ def objective(self, trial):
     }
 
     try:
-        scores = cross_validate(model, X, y, cv=cv, scoring=scoring, n_jobs=-1)
+        scores = cross_validate(model, X, y, cv=cv, scoring=scoring, n_jobs=-1)     # 교차 검증 실행->각 변수에 대해 점수화
 
-        mean_accuracy = np.mean(scores['test_accuracy'])
-        mean_recall_positive = np.mean(scores['test_recall_positive'])
+        mean_accuracy = np.mean(scores['test_accuracy'])        # 전체 trial의 평균 accuracy
+        mean_recall_positive = np.mean(scores['test_recall_positive'])      # 전체 trial의 평균 recall
         mean_f2_positive = np.mean(scores['test_f2_positive'])
 
         # mean_train_accuracy = np.mean(scores['train_accuracy'])
@@ -88,7 +88,7 @@ def get_SVC_optimized(self):  # 함수 이름을 변경하거나 기존 함수�
     print("\n최적화 결과:")
     best_trial = study.best_trial
     print(f"  최적 F2-score (목표): {best_trial.value:.4f}")
-    print("  최적 하이퍼파라미터:")
+    print("  최적 하이퍼파라미터:")      # C, class_weight_True의 값 출력
     for key, value in best_trial.params.items():
         print(f"    {key}: {value}")
 
@@ -103,7 +103,7 @@ def get_SVC_optimized(self):  # 함수 이름을 변경하거나 기존 함수�
     C = best_params['C']
     class_weight = {0: 1, 1: best_params['class_weight_True']}
 
-
+    # 최적 파라미터로 최종 모델 생성
     self.model = SVC(
         C=C,
         class_weight=class_weight,
@@ -127,7 +127,7 @@ def get_SVC_optimized(self):  # 함수 이름을 변경하거나 기존 함수�
 
     self.models_hyperparameters = self.model.get_params()
 
-    if self.config.get('save_model', False):
+    if self.config.get('save_model', False):        # 학습된 모델 저장
         folder_path = self.config.get('result_folder_path', '.')
         # import os; os.makedirs(folder_path, exist_ok=True) # 폴더가 없다면 생성
         model_path = f"{folder_path}/AdaBoostClassifier_optimized_model.joblib"
@@ -153,7 +153,7 @@ def get_nuSVC_optimized(self):  # 함수 이름을 변경하거나 기존 함수
     print("\n최적화 결과:")
     best_trial = study.best_trial
     print(f"  최적 F2-score (목표): {best_trial.value:.4f}")
-    print("  최적 하이퍼파라미터:")
+    print("  최적 하이퍼파라미터:")      # class_weight_False, class_weight_True 값 출력
     for key, value in best_trial.params.items():
         print(f"    {key}: {value}")
 
@@ -168,7 +168,7 @@ def get_nuSVC_optimized(self):  # 함수 이름을 변경하거나 기존 함수
     
     class_weight = {0: best_params['class_weight_False'], 1: best_params['class_weight_True']}
 
-
+    # 최적 파라미터로 최종 모델 생성
     self.model = NuSVC(
         nu=0.01,
         class_weight=class_weight,
@@ -192,7 +192,7 @@ def get_nuSVC_optimized(self):  # 함수 이름을 변경하거나 기존 함수
 
     self.models_hyperparameters = self.model.get_params()
 
-    if self.config.get('save_model', False):
+    if self.config.get('save_model', False):        # 학습된 모델 저장
         folder_path = self.config.get('result_folder_path', '.')
         # import os; os.makedirs(folder_path, exist_ok=True) # 폴더가 없다면 생성
         model_path = f"{folder_path}/NuSVC_optimized_model.joblib"

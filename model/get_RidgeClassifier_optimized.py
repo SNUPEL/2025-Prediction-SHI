@@ -17,7 +17,7 @@ def objective(self, trial):
     # RidgeClassifier의 alpha 최적화
     alpha = trial.suggest_float("alpha", 0.1, 1)    # 규제 강도, 0.1~1 사이의 실수를 탐색
 
-    model = RidgeClassifier(        # trial을 통해 선택된 class_weight, alpha를 기반으로 RidgeClassifier 싫행
+    model = RidgeClassifier(        # trial을 통해 선택된 class_weight, alpha를 기반으로 RidgeClassifier 실행
         alpha=alpha,
         random_state=self.config['random_state'],
         class_weight=class_weight
@@ -75,7 +75,7 @@ def get_RidgeClassifier_optimized(self):
     print("\n최적화 결과:")
     best_trial = study.best_trial
     print(f"  최적 F2-score (목표): {best_trial.value:.4f}")
-    print("  최적 하이퍼파라미터:")      # alpha, class_weight_False, class_weight_True의 값 표시
+    print("  최적 하이퍼파라미터:")      # alpha, class_weight_False, class_weight_True의 값 출력
     for key, value in best_trial.params.items():
         print(f"    {key}: {value}")
 

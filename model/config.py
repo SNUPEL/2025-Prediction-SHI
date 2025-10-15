@@ -66,8 +66,8 @@ def create_config():
             'oversampling': 'SMOTE',
             'SMOTE_parameter': {'sampling_strategy': 0.5, 'k_neighbors': 30},
             'TSSMOTE_parameter': {'sampling_strategy': 0.5, 'k_neighbors': 30},
-            'model_parameter': {'n_estimators': 1000, 'max_depth': 25, 'min_samples_split': 2,
-                                'min_samples_leaf': 1, 'max_features': 'sqrt'},
+            'model_parameter': {'n_estimators': 1000, 'max_depth': 25, 'min_samples_split': 2,      # n_estimators: 트리의 개수, max_depth: 트리의 최대 한도 깊이, min_samples_split: 자식 노드를 갖기 위한 최소한의 데이터 개수
+                                'min_samples_leaf': 1, 'max_features': 'sqrt'},     # min_samples_leaf: 리프 노드의 최소 데이터 개수, max_features: 자식 노드를 최적으로 분할할 수 있는 특성의 개수 ('sqrt', 'log2', None, 실수값 지정)
             'class_weight': {0: 1, 1: 1000}     # 클래스별 가중치 ('balanced', {0(거래중): a, 1(경영악화): b}(a, b는 자연수))
         },
 
@@ -92,8 +92,8 @@ def create_config():
             'oversampling': 'SMOTE',
             'SMOTE_parameter': {'sampling_strategy': 0.5, 'k_neighbors': 30},
             'TSSMOTE_parameter': {'sampling_strategy': 0.5, 'k_neighbors': 30},
-            'model_parameter': {'n_estimators': 1000, 'max_depth': 50, 'min_samples_split': 2,
-                                'min_samples_leaf': 1, 'max_features': 'sqrt'},
+            'model_parameter': {'n_estimators': 1000, 'max_depth': 50, 'min_samples_split': 2,      # n_estimators: 트리의 개수, max_depth: 트리의 최대 한도 깊이, min_samples_split: 자식 노드를 갖기 위한 최소한의 데이터 개수
+                                'min_samples_leaf': 1, 'max_features': 'sqrt'},     # min_samples_leaf: 리프 노드의 최소 데이터 개수, max_features: 자식 노드를 최적으로 분할할 수 있는 특성의 개수 ('sqrt', 'log2', None, 정수/실수값 지정)
             'class_weight': {0: 1, 1: 1000}     # 클래스별 가중치 ('balanced', {0(거래중): a, 1(경영악화): b}(a, b는 자연수))
         },
 
@@ -109,7 +109,7 @@ def create_config():
             'model_parameter': {
                 'alpha': 0.9887,          # 규제 강도
                 'solver': 'auto',      # 계산 알고리즘 ('auto', 'svd', 'cholesky', 'sparse_cg', 'lsqr', 'sag', 'saga', 'lbfgs')
-                'tol': 1e-4            # 중단 기준 정밀도 ('svd', 'cholesky', 'sparse_cg', 'lsqr', 'sag', 'saga', 'lbfgs', 지정 float 값)
+                'tol': 1e-4            # 중단 기준 정밀도 ('svd', 'cholesky', 'sparse_cg', 'lsqr', 'sag', 'saga', 'lbfgs', 실수값)
             },
             'class_weight': {0: 6, 1: 770}      # 클래스별 가중치 ('balanced', {0(거래중): a, 1(경영악화): b}(a, b는 자연수))
 
@@ -134,7 +134,7 @@ def create_config():
         },
 
         'XGBClassifier': {
-            'back_end': 'sklearn',
+            'back_end': 'xgboost',
             'data_shape': 'flatten',
             'undersampling': 'ENN',
             'ENN_parameter': {'sampling_strategy': 'auto', 'n_neighbors': 200},
@@ -142,13 +142,13 @@ def create_config():
             'SMOTE_parameter': {'sampling_strategy': 0.5, 'k_neighbors': 30},
             'TSSMOTE_parameter': {'sampling_strategy': 0.5, 'k_neighbors': 30},
             'model_parameter': {
-                'n_estimators': 1000,
-                'learning_rate': 0.01,
-                'max_depth': 6,
+                'n_estimators': 1000,       # 트리의 개수
+                'learning_rate': 0.01,      # 학습률
+                'max_depth': 6,             # 트리의 최대 한도 깊이
                 'gamma': 0.1,               # 리프 노드 분할을 위한 최소 손실 감소
                 'min_child_weight': 1,      # 자식 노드에 필요한 최소 가중치 합
             },
-            'class_weight': {0: 1, 1: 1000}
+
         },
 
         'SVC': {
@@ -160,12 +160,12 @@ def create_config():
             'SMOTE_parameter': {'sampling_strategy': 0.5, 'k_neighbors': 30},
             'TSSMOTE_parameter': {'sampling_strategy': 0.5, 'k_neighbors': 30},
             'model_parameter': {
-                'probability': True,   # XAI 사용시 True
-                'C': 0.188609965,              # 규제 파라미터. 작을수록 규제가 강함
+                'probability': True,   # 확률 추정 사용 여부, XAI 사용시 True
+                'C': 0.188609965,      # 규제 파라미터. 작을수록 규제가 강함
                 'kernel': 'rbf',       # 커널 종류 ('linear', 'rbf', 'poly', 'sigmoid')
                 'gamma': 'scale'       # 커널 계수 ('scale', 'auto' 또는 실수값)
             },
-            'class_weight': {0: 1, 1: 374}
+            'class_weight': {0: 1, 1: 374}      # 클래스별 가중치 ('balanced', {0(거래중): a, 1(경영악화): b}(a, b는 자연수))
         },
 
         'nuSVC': {
@@ -177,12 +177,12 @@ def create_config():
             'SMOTE_parameter': {'sampling_strategy': 0.5, 'k_neighbors': 30},
             'TSSMOTE_parameter': {'sampling_strategy': 0.5, 'k_neighbors': 30},
             'model_parameter': {
-                'probability': True,   # XAI 사용시 True
-                'nu': 0.01,
+                'probability': True,   # 확률 추정 사용 여부, XAI 사용시 True
+                'nu': 0.01,            # 오류와 서포트 벡터의 비율을 조정하는 파라미터
                 'kernel': 'rbf',       # 커널 종류 ('linear', 'rbf', 'poly', 'sigmoid')
                 'gamma': 'scale'       # 커널 계수 ('scale', 'auto' 또는 실수값)
             },
-            'class_weight': {0: 1, 1: 1000}
+            'class_weight': {0: 1, 1: 1000}         # 클래스별 가중치 ('balanced', {0(거래중): a, 1(경영악화): b}(a, b는 자연수))
         },
 
         'VotingClassifier': {
