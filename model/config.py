@@ -124,7 +124,7 @@ def create_config():
             'SMOTE_parameter': {'sampling_strategy': 0.5, 'k_neighbors': 30},
             'TSSMOTE_parameter': {'sampling_strategy': 0.5, 'k_neighbors': 30},
             'model_parameter': {
-                'loss': 'hinge',      # 손실 함수 ('hinge', 'log_loss', 'modified_huber', 'squared_hinge', 'perceptron', 'squared_error', 'huber', 'epsilon_insensitive', 'squared_epsilon_insensitive')
+                'loss': 'hinge',       # 손실 함수 ('hinge', 'log_loss', 'modified_huber', 'squared_hinge', 'perceptron', 'squared_error', 'huber', 'epsilon_insensitive', 'squared_epsilon_insensitive')
                 'penalty': 'l2',       # 규제 종류 ('l2', 'l1', 'elasticnet', None)
                 'alpha': 0.0001,       # 규제 강도
                 'max_iter': 1000,      # 최대 반복 횟수(에포크)
@@ -194,18 +194,18 @@ def create_config():
             'SMOTE_parameter': {'sampling_strategy': 0.5, 'k_neighbors': 30},
             'TSSMOTE_parameter': {'sampling_strategy': 0.5, 'k_neighbors': 30},
             'SVC_parameter': {
-                'probability': True,  # XAI 사용시 True
+                'probability': True,  # 확률 추정 사용 여부, XAI 사용시 True
                 'C': 0.1,  # 규제 파라미터. 작을수록 규제가 강함
                 'kernel': 'rbf',  # 커널 종류 ('linear', 'rbf', 'poly', 'sigmoid')
                 'gamma': 'scale'  # 커널 계수 ('scale', 'auto' 또는 실수값)
             },
             'nuSVC_parameter': {
-                'probability': True,  # XAI 사용시 True
+                'probability': True,  # 확률 추정 사용 여부, XAI 사용시 True
                 'nu': 0.01,
                 'kernel': 'rbf',  # 커널 종류 ('linear', 'rbf', 'poly', 'sigmoid')
                 'gamma': 'scale'  # 커널 계수 ('scale', 'auto' 또는 실수값)
             },
-            'AdaBoostClassifier_parameter': {'n_estimators': 1000, "learning_rate": 0.001},
+            'AdaBoostClassifier_parameter': {'n_estimators': 1000, "learning_rate": 0.001},     # n_estimators: estimator의 개수, learning_rate: 학습률
             'RidgeClassifier_parameter': {
                 'alpha': 0.978892658777735,  # 규제 강도
                 'solver': 'auto',  # 계산 알고리즘
