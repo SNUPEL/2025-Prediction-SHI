@@ -293,17 +293,23 @@ def create_config():
             'back_end': 'pytorch',
             'data_shape': 'multichannel',
             'undersampling': 'ENN',
+            # 다중 채널 모델은 과도한 이상치 제거를 위해 ENN(Edited Nearest Neighbours)을 기본으로 사용
             # 'undersampling': None,
             # 'ENN_parameter': {'sampling_strategy': 'auto', 'n_neighbors': 20},
+            # ENN 이웃 수를 30으로 확대해 필요 이상의 샘플 제거를 방지
             'ENN_parameter': {'sampling_strategy': 'auto', 'n_neighbors': 30},
             # 'ENN_parameter': {'sampling_strategy': 'auto', 'n_neighbors': 15},
             # 'oversampling': 'SMOTE',
+            # 시계열 채널 간 상관이 높으므로 오버샘플링은 기본적으로 비활성화
             'oversampling': None,
             # 'oversampling': 'Borderline-TSSMOTE',  # Borderline-TSSMOTE, TSSMOTE, SMOTE
+            # 필요 시 사용할 수 있는 oversampling 파라미터 세트
             'SMOTE_parameter': {'sampling_strategy': 0.1, 'k_neighbors': 5},
             'TSSMOTE_parameter': {'sampling_strategy': 1.0, 'k_neighbors': 15},
             'model_parameter': {
+                # 기본 LSTM hidden size (층 정보가 없을 때 사용)
                 'hidden_size': 512,
+                # 시계열 정보를 차례로 처리할 다층 LSTM 구성
                 'lstm_layers': [
                     {'hidden_size': 128, 'dropout': 0.1},
                     {'hidden_size': 512, 'dropout': 0.1},
@@ -320,8 +326,11 @@ def create_config():
                 'use_channel_attention': True,
                 'use_temporal_attention': True,
                 # Bi-LSTM 및 Transformer 설정 추가
+                # 양방향 LSTM으로 전후 맥락을 함께 학습
                 'use_bidirectional': True,  # Bi-LSTM 사용 여부
+                # 시계열 추출 후 특징 보강을 위해 Transformer 활성화
                 'use_transformer': True,  # Transformer 사용 여부
+                # Transformer를 적용할 위치를 LSTM 뒤로 배치
                 'transformer_position': 'after_lstm',  # 'after_cnn' or 'after_lstm'
                 'positional_encoding': False,  # 채널 순서 무관하므로 False
                 'transformer_config': {
@@ -332,9 +341,11 @@ def create_config():
                     'dropout': 0.1  # Transformer 내부 dropout
                 },
                 # Residual Connection 설정
+                # 첫 LSTM 층 출력을 잔차 연결로 보강할지 여부
                 'use_residual_connection': True,  # Residual Connection 사용 여부
                 'residual_weight': 0.1,  # Residual Connection 가중치
                 # Cross-Channel Transformer 설정
+                # 채널 간 상호작용을 학습하기 위한 Transformer 사용 여부
                 'use_cross_channel_transformer': True,  # 채널 간 Transformer 사용 여부
                 'cross_channel_transformer_config': {
                     'num_heads': 4,  # 채널 수와 호환되도록 자동 조정됨
@@ -344,6 +355,7 @@ def create_config():
                 }
             },
             'optimizer_parameter': {
+                # Adam 학습률과 L2 정규화 계수
                 'lr': 0.0001,
                 'weight_decay': 1e-4
             },
