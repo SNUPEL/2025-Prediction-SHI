@@ -12,7 +12,6 @@ tf.config.optimizer.set_experimental_options({
 
 
 def get_AutoEncoder(self):
-    tf.random.set_seed(self.config['random_state'])
     X_train_normal = self.data.df_x_train_flatten[self.data.df_y_train['label'] == 0]
     num_features = self.data.df_x_train_flatten.shape[1]
 

@@ -32,11 +32,3 @@ def evaluate_classifier(self):
     self.result['recall'] = recall_score(y_test_arr, y_pred_arr, zero_division=0.0)
     self.result['f1_score'] = f1_score(y_test_arr, y_pred_arr, zero_division=0.0)
     self.result['specificity'] = self.result['TN'] / self.result['class_0_total'] if self.result['class_0_total'] > 0 else 0.0
-
-
-def evaluate_regressor(self):
-    # 회귀 문제용 핵심 지표 계산
-    self.result['MSE'] = mean_squared_error(self.data.y_test, self.data.y_pred)
-    self.result['RMSE'] = np.sqrt(self.result['MSE'])
-    self.result['MAE'] = mean_absolute_error(self.data.y_test, self.data.y_pred)
-    self.result['MAPE'] = mean_absolute_percentage_error(self.data.y_test, self.data.y_pred)

@@ -10,6 +10,9 @@ from dtaidistance import dtw
 
 
 def split_data(self):
+    """
+    각 회사 별 데이터를 기반으로 train valid test 분리, sampling을 진행
+    """
     temp_X_train, temp_y_train, temp_name_train = [], [], []
     temp_X_test, temp_y_test, temp_name_test = [], [], []
 
@@ -20,18 +23,21 @@ def split_data(self):
     num_features = len(feature_names)
 
     for company_id, company in self.company_dict.items():
+        # 회사별 date range에 속하는 모든 회사에 대해 반복
         for date in company.date_range[:-self.config['data_duration']]:
             name = str(company_id) + '_' + str(date.date())
             window_start_date = date
             window_end_date = date + pd.DateOffset(months=self.config['data_duration'] - 1)
             label_date = window_end_date + pd.DateOffset(months=self.config['label_duration'])
 
+            # window 뒤의 기간을 기반으로 label 설정
             label = True if company.label and window_end_date < company.end_date <= label_date else False
 
             # 경영악화이며, 경/중이 경이면 제외
             if self.config['severity_label_type'] and label and company.severity_level == 'B':
                 continue
 
+            # 2차원 형태로 데이터 정의
             instance_features = np.zeros((num_features, self.config['data_duration']))
             for i in range(self.config['data_duration']):
                 current_date_in_window = window_start_date + pd.DateOffset(months=i)
@@ -39,6 +45,7 @@ def split_data(self):
                     val = company.data_dict[feature_name].get(current_date_in_window, np.nan)
                     instance_features[j, i] = val
 
+            # 기준에 따라 train, test로 분류
             if (company.end_date is not None and company.end_date < self.label_date) or (date <= self.split_cutoff_date):
                 # 'overlap'이 False이고 윈도우가 분할 기준을 넘어가는 경우, 훈련 세트에 포함시키지 않음
                 if not self.config.get('overlap', True) and window_end_date > self.split_cutoff_date:
@@ -55,6 +62,7 @@ def split_data(self):
         for i in range(self.config['data_duration']):
             self.flattened_column_names.append(f"{feature_name}_{i}")
 
+    # 일정 비율을 validation으로 분류
     train_indicies = range(len(temp_y_train))
     train_idx, valid_idx = train_test_split(
         train_indicies,
@@ -144,6 +152,7 @@ def apply_undersampling(self):
 
     X_sampled, y_sampled = sampler.fit_resample(x_train, y_train['label'])
 
+    # sampler를 통해 유효한 샘플만 저장
     self.df_x_train_flatten_after_sampling = x_train.iloc[sampler.sample_indices_]
     self.df_y_train_after_sampling = y_train.iloc[sampler.sample_indices_]
     self.df_train_after_sampling = pd.concat([self.df_x_train_flatten_after_sampling, self.df_y_train_after_sampling], axis=1)
@@ -187,6 +196,7 @@ def apply_oversampling(self):
             X_sampled.index = new_index
             y_sampled.index = new_index
 
+        # 샘플링 후의 샘플로 변경
         self.df_x_train_flatten_after_sampling = X_sampled
         self.df_y_train_after_sampling = y_sampled
         self.df_train_after_sampling = pd.concat(
@@ -288,6 +298,9 @@ def apply_oversampling(self):
 
 
 def make_matrix_data(self):
+    """
+    flatten data를 matrix로 변형하는 함수
+    """
     df_x_train_after_sampling = self.df_x_train_flatten_after_sampling
     matrix_dict = dict()
     time_duration = self.config['data_duration']

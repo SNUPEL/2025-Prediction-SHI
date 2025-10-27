@@ -32,9 +32,6 @@ def create_config():
     config['validation_ratio'] = 0.1
 
     # 데이터 로딩 시 제외할 시트 이름 목록
-    # config['sheet_ban_list'] = ['경영 영향1', '경영 영향2', '종합평가', '입사자', '입사율', '퇴사율', '본공률(시급월급)',
-    #                             '4대보험 가입자', '본공률(4대보험)', '안전사고 건수(중간, 낮음)', '안전사고 건수(높음)',
-    #                             '공수능률',  '시급,월급제 인원', '투입인원', '환산능률']
     config['sheet_ban_list'] = ['경영 영향1', '경영 영향2', '종합평가', '본공률(4대보험)', '본공률(시급월급)',
                                 '4대보험 가입자', '안전사고 건수(중간, 낮음)', '안전사고 건수(높음)', '종합평가_점수_과거']
 
@@ -81,7 +78,7 @@ def create_config():
             'TSSMOTE_parameter': {'sampling_strategy': 0.5, 'k_neighbors': 30},
             'model_parameter': {'n_estimators': 1000, "learning_rate": 0.001},      # n_estimators: estimator의 개수, learning_rate: 학습률
             'estimator_parameter': {'max_depth': 2, 'min_samples_split': 2},    # estimator로 사용하는 DecisionTreeClassifier의 파라미터      # max_depth: 트리의 최대 한도 깊이, min_samples_split: 자식 노드를 갖기 위한 최소한의 데이터 개수
-            'class_weight': {0: 1, 1: 1000}     # 클래스별 가중치 ('balanced', {0(거래중): a, 1(경영악화): b}(a, b는 자연수))
+            'class_weight': {0: 1, 1: 1000}     # 클래스별 가중치
         },
 
         'ExtraTreesClassifier': {
@@ -93,8 +90,8 @@ def create_config():
             'SMOTE_parameter': {'sampling_strategy': 0.5, 'k_neighbors': 30},
             'TSSMOTE_parameter': {'sampling_strategy': 0.5, 'k_neighbors': 30},
             'model_parameter': {'n_estimators': 1000, 'max_depth': 50, 'min_samples_split': 2,      # n_estimators: 트리의 개수, max_depth: 트리의 최대 한도 깊이, min_samples_split: 자식 노드를 갖기 위한 최소한의 데이터 개수
-                                'min_samples_leaf': 1, 'max_features': 'sqrt'},     # min_samples_leaf: 리프 노드의 최소 데이터 개수, max_features: 자식 노드를 최적으로 분할할 수 있는 특성의 개수 ('sqrt', 'log2', None, 정수/실수값 지정)
-            'class_weight': {0: 1, 1: 1000}     # 클래스별 가중치 ('balanced', {0(거래중): a, 1(경영악화): b}(a, b는 자연수))
+                                'min_samples_leaf': 1, 'max_features': 'sqrt'},     # min_samples_leaf: 리프 노드의 최소 데이터 개수, max_features: 자식 노드를 최적으로 분할할 수 있는 특성의 개수
+            'class_weight': {0: 1, 1: 1000}     # 클래스별 가중치
         },
 
         'RidgeClassifier': {
@@ -108,10 +105,10 @@ def create_config():
             # get_RidgeClassifier_optimized를 이용해서 최적화한 파라미터(label_date: 2023-03-01 기준)
             'model_parameter': {
                 'alpha': 0.9887,          # 규제 강도
-                'solver': 'auto',      # 계산 알고리즘 ('auto', 'svd', 'cholesky', 'sparse_cg', 'lsqr', 'sag', 'saga', 'lbfgs')
-                'tol': 1e-4            # 중단 기준 정밀도 ('svd', 'cholesky', 'sparse_cg', 'lsqr', 'sag', 'saga', 'lbfgs', 실수값)
+                'solver': 'auto',      # 계산 알고리즘
+                'tol': 1e-4            # 중단 기준 정밀도
             },
-            'class_weight': {0: 6, 1: 770}      # 클래스별 가중치 ('balanced', {0(거래중): a, 1(경영악화): b}(a, b는 자연수))
+            'class_weight': {0: 6, 1: 770}      # 클래스별 가중치
 
         },
 
@@ -124,13 +121,13 @@ def create_config():
             'SMOTE_parameter': {'sampling_strategy': 0.5, 'k_neighbors': 30},
             'TSSMOTE_parameter': {'sampling_strategy': 0.5, 'k_neighbors': 30},
             'model_parameter': {
-                'loss': 'hinge',       # 손실 함수 ('hinge', 'log_loss', 'modified_huber', 'squared_hinge', 'perceptron', 'squared_error', 'huber', 'epsilon_insensitive', 'squared_epsilon_insensitive')
-                'penalty': 'l2',       # 규제 종류 ('l2', 'l1', 'elasticnet', None)
+                'loss': 'hinge',       # 손실 함수
+                'penalty': 'l2',       # 규제 종류
                 'alpha': 0.0001,       # 규제 강도
                 'max_iter': 1000,      # 최대 반복 횟수(에포크)
-                'learning_rate': 'optimal'  # 학습률 스케줄 ('constant', 'optimal', 'invscaling', 'adaptive')
+                'learning_rate': 'optimal'  # 학습률 스케줄
             },
-            'class_weight': {0: 1, 1: 1000}  # 클래스별 가중치 ('balanced', {0(거래중): a, 1(경영악화): b}(a, b는 자연수))
+            'class_weight': {0: 1, 1: 1000}  # 클래스별 가중치
         },
 
         'XGBClassifier': {
@@ -162,10 +159,10 @@ def create_config():
             'model_parameter': {
                 'probability': True,   # 확률 추정 사용 여부, XAI 사용시 True
                 'C': 0.188609965,      # 규제 파라미터. 작을수록 규제가 강함
-                'kernel': 'rbf',       # 커널 종류 ('linear', 'rbf', 'poly', 'sigmoid')
-                'gamma': 'scale'       # 커널 계수 ('scale', 'auto' 또는 실수값)
+                'kernel': 'rbf',       # 커널 종류
+                'gamma': 'scale'       # 커널 계수
             },
-            'class_weight': {0: 1, 1: 374}      # 클래스별 가중치 ('balanced', {0(거래중): a, 1(경영악화): b}(a, b는 자연수))
+            'class_weight': {0: 1, 1: 374}      # 클래스별 가중치
         },
 
         'nuSVC': {
@@ -179,10 +176,10 @@ def create_config():
             'model_parameter': {
                 'probability': True,   # 확률 추정 사용 여부, XAI 사용시 True
                 'nu': 0.01,            # 오류와 서포트 벡터의 비율을 조정하는 파라미터
-                'kernel': 'rbf',       # 커널 종류 ('linear', 'rbf', 'poly', 'sigmoid')
-                'gamma': 'scale'       # 커널 계수 ('scale', 'auto' 또는 실수값)
+                'kernel': 'rbf',       # 커널 종류
+                'gamma': 'scale'       # 커널 계수
             },
-            'class_weight': {0: 1, 1: 1000}         # 클래스별 가중치 ('balanced', {0(거래중): a, 1(경영악화): b}(a, b는 자연수))
+            'class_weight': {0: 1, 1: 1000}         # 클래스별 가중치
         },
 
         'VotingClassifier': {
@@ -196,14 +193,14 @@ def create_config():
             'SVC_parameter': {
                 'probability': True,  # 확률 추정 사용 여부, XAI 사용시 True
                 'C': 0.1,  # 규제 파라미터. 작을수록 규제가 강함
-                'kernel': 'rbf',  # 커널 종류 ('linear', 'rbf', 'poly', 'sigmoid')
-                'gamma': 'scale'  # 커널 계수 ('scale', 'auto' 또는 실수값)
+                'kernel': 'rbf',  # 커널 종류
+                'gamma': 'scale'  # 커널 계수
             },
             'nuSVC_parameter': {
                 'probability': True,  # 확률 추정 사용 여부, XAI 사용시 True
                 'nu': 0.01,
-                'kernel': 'rbf',  # 커널 종류 ('linear', 'rbf', 'poly', 'sigmoid')
-                'gamma': 'scale'  # 커널 계수 ('scale', 'auto' 또는 실수값)
+                'kernel': 'rbf',  # 커널 종류
+                'gamma': 'scale'  # 커널 계수
             },
             'AdaBoostClassifier_parameter': {'n_estimators': 1000, "learning_rate": 0.001},     # n_estimators: estimator의 개수, learning_rate: 학습률
             'RidgeClassifier_parameter': {
@@ -231,6 +228,7 @@ def create_config():
                     {'units': 256, 'activation': 'relu'},
                     {'units': 64, 'activation': 'relu'}
                 ],
+                # 중간 latent vector의 크기
                 'latent_space': {'units': 16, 'activation': 'relu'},
                 'decoder_layers': [
                     {'units': 64, 'activation': 'relu'},
@@ -248,6 +246,7 @@ def create_config():
                 'batch_size': 64,
                 'shuffle': True
             },
+            # 예외 기준 퍼센트
             'threshold_percentile': 97.5
         },
 
@@ -259,6 +258,7 @@ def create_config():
             'oversampling': None,
             'SMOTE_parameter': {'sampling_strategy': 0.5, 'k_neighbors': 30},
             'TSSMOTE_parameter': {'sampling_strategy': 0.5, 'k_neighbors': 10},
+            # 2차 전처리 과정의 시계열 길이 수
             'sub_window_size': 4,
             'model_parameter': {
                 'dropout_rate': 0.3,
@@ -266,11 +266,6 @@ def create_config():
                     {'filters': 32, 'kernel_width': 2, 'padding': "same", 'return_sequences': True, 'activation': 'relu'},
                     {'filters': 16, 'kernel_width': 2, 'padding': "same", 'return_sequences': True, 'activation': 'relu'},
                     {'filters': 8, 'kernel_width': 2, 'padding': "same", 'return_sequences': True, 'activation': 'relu'}
-                ],
-                'bilstm_layers': [
-                    {'units': 32, 'return_sequences': True, 'activation': 'relu', 'l2_reg': 0.001},
-                    {'units': 16, 'return_sequences': True, 'activation': 'relu', 'l2_reg': 0.001},
-                    {'units': 8, 'return_sequences': False, 'activation': 'relu', 'l2_reg': 0.001}
                 ],
                 'output_layer': {'units': 1, 'activation': 'sigmoid'}
             },
@@ -294,15 +289,10 @@ def create_config():
             'data_shape': 'multichannel',
             'undersampling': 'ENN',
             # 다중 채널 모델은 과도한 이상치 제거를 위해 ENN(Edited Nearest Neighbours)을 기본으로 사용
-            # 'undersampling': None,
-            # 'ENN_parameter': {'sampling_strategy': 'auto', 'n_neighbors': 20},
             # ENN 이웃 수를 30으로 확대해 필요 이상의 샘플 제거를 방지
             'ENN_parameter': {'sampling_strategy': 'auto', 'n_neighbors': 30},
-            # 'ENN_parameter': {'sampling_strategy': 'auto', 'n_neighbors': 15},
-            # 'oversampling': 'SMOTE',
             # 시계열 채널 간 상관이 높으므로 오버샘플링은 기본적으로 비활성화
             'oversampling': None,
-            # 'oversampling': 'Borderline-TSSMOTE',  # Borderline-TSSMOTE, TSSMOTE, SMOTE
             # 필요 시 사용할 수 있는 oversampling 파라미터 세트
             'SMOTE_parameter': {'sampling_strategy': 0.1, 'k_neighbors': 5},
             'TSSMOTE_parameter': {'sampling_strategy': 1.0, 'k_neighbors': 15},
@@ -379,7 +369,7 @@ def create_config():
 
             # --- 데이터 불균형 처리를 위한 샘플링 기법 설정 ---
             'undersampling': 'ENN',  # 다수 클래스의 데이터를 줄이는 언더샘플링 기법을 선택
-            'ENN_parameter': {  # ENN 기법에 적용할 세부 파라미터입니다.
+            'ENN_parameter': {  # ENN 기법에 적용할 세부 파라미터
                 'sampling_strategy': 'auto',  # 자동으로 다수 클래스의 샘플을 제거하여 클래스 균형을 맞춤
                 'n_neighbors': 7  # ENN 알고리즘이 주변 샘플을 확인할 때 참고할 이웃(neighbor)의 수
             },
@@ -398,7 +388,7 @@ def create_config():
                 'embed_dim': 128,  # 입력 데이터의 각 피처(feature) 벡터를 몇 차원으로 임베딩(압축/확장)할지 결정 모델의 표현력을 좌우
                 'num_blocks': 4,  # 트랜스포머의 핵심 연산 단위인 '인코더 블록'을 몇 개나 층층이 쌓을지 결정
                 'num_heads': 8,  # Multi-Head Attention 메커니즘에서, 시계열의 여러 특징을 동시에 학습하기 위해 어텐션을 몇 개의 '헤드'로 분할할지 결정
-                'dropout_rate': 0.1,  # 과적합(overfitting)을 방지하기 위해 각 연산 단계에서 10%의 뉴런을 랜덤하게 비활성화합니다.
+                'dropout_rate': 0.1,  # 과적합(overfitting)을 방지하기 위해 각 연산 단계에서 10%의 뉴런을 랜덤하게 비활성화
                 'output_layer': {'units': 1, 'activation': 'sigmoid'}
                 # 최종 예측을 위한 출력 레이어 설정입니다. units=1, sigmoid 활성화 함수는 이진 분류(0 또는 1) 문제에 사용
             },
@@ -417,14 +407,15 @@ def create_config():
                 'epochs': 50,  # 전체 데이터셋을 총 몇 번 반복하여 학습할지 결정
                 'batch_size': 64,  # 한 번에 몇 개의 데이터 샘플을 묶어서 모델을 학습시킬지 결정
                 'class_weight': 'auto',  # 데이터의 클래스 불균형을 해소하기 위해, 샘플 수가 적은 클래스(소수 클래스)에 더 높은 가중치를 부여하여 학습 중요도를 높임
-                'shuffle': True  # 각 에포크(epoch)를 시작하기 전에 학습 데이터를 무작위로 섞어 모델이 데이터 순서에 과적합되는 것을 방지함
+                'shuffle': True  # 각 에포크(epoch)를 시작하기 전에 학습 데이터를 무작위로 섞어 모델이 데이터 순서에 과적합되는 것을 방지
             },
 
             # --- 예측 및 평가 관련 설정 ---
             'threshold': 0.5,  # 모델이 예측한 확률값이 0.5 이상일 경우를 '경영악화'(1)로 최종 판단하는 기준점
-            'use_early_stopping': True,  # 모델의 성능(예: 검증 손실)이 일정 기간 동안 개선되지 않으면, 과적합을 방지하고 불필요한 학습을 중단시킴
+            'use_early_stopping': True,  # 모델의 성능(예: 검증 손실)이 일정 기간 동안 개선되지 않으면, 과적합을 방지하고 불필요한 학습을 중단
         },
 
+        # 잔차학습 기반의 모델 (최적화 되지 않음)
         'ResNet': {
             'back_end': 'tensorflow',
             'data_shape': 'matrix',
@@ -458,6 +449,8 @@ def create_config():
             'threshold': 0.5
         },
 
+
+        # 시간 공간 축 기준의 mixing model (최적화 되지 않음)
         'MLP_Mixer': {
             'back_end': 'tensorflow',
             'data_shape': 'matrix',
@@ -492,27 +485,27 @@ def create_config():
     config.update(model_config[config['model_type']])
 
     config['dice_parameter'] = {
-        # 실험 2: 변동가능 범위
+        # 변동가능 범위
         'percentage_change': 0.3,
-        # 실험 1: 개월 수 6 -> 3
+        # 변동가능 개월 수
         'month_length': 4,
-        'method': 'random',  # 설명 방식 ('random', 'genetic', 'kdtree')
+        'method': 'random',  # 설명 방식 ('random', 'genetic', 'kdtree') genetic: 유전알고리즘 기반 최적화, kdtree: 기존 해 기반의 탐색
         # 설명할 대상: 'predicted_positives', 'misclassified'
         'query_instance_mode': 'predicted_positives',
         'total_CFs': 1,  # 찾을 대안의 최대 개수
         'desired_class': 'opposite',  # 반대 클래스로 바뀌는 대안을 찾음
-        'features_to_ban': ['기성매출', '종합평가', '경영 영향', '안전사고']  # 변경을 허용하지 않는 특성 리스트
+        'features_to_ban': ['기성매출', '종합평가', '경영 영향', '안전사고']  # 변경을 허용하지 않는 특성 리스트, 해당 문자열이 들어가면 변경을 허용하지 않음
     }
 
     # 학습된 모델 저장 여부 설정
-    config['save_model'] = False  # 추가 구현 필요
+    config['save_model'] = False  # 학습에 오랜 시간이 걸리지 않아서 미구현
     config['save_train_data'] = False
     config['save_validation_data'] = False
     config['save_test_data'] = False
     config['save_confusion_matrix'] = True  # 혼동 행렬 저장 여부
-    config['save_loss_history'] = True
+    config['save_loss_history'] = True  # loss 학습 과정 저장
 
-    # 결과 저장 폴더 설정 (타임스탬프 기반)
+    # 결과 저장 폴더 설정
     config['ymd'] = time.strftime('%Y%m%d')
     config['hour'] = str(time.localtime().tm_hour)
     config['minute'] = str(time.localtime().tm_min)

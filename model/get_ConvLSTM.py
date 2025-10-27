@@ -42,7 +42,6 @@ def create_convlstm_5d_sequences_internal(data_array, sub_window_size):
 
 
 def get_ConvLSTM(self):
-    tf.random.set_seed(self.config['random_state'])
     if self.config['undersampling'] or self.config['oversampling']:
         X_train_3d = np.array(list(self.data.df_x_train_matrix_dict_after_sampling.values()))
         y_train = np.array(list(self.data.df_y_train_dict_after_sampling.values()))
@@ -82,22 +81,6 @@ def get_ConvLSTM(self):
 
     x = Flatten()(x)
     x = Dropout(model_params['dropout_rate'])(x)  # 최종 분류기 전 Dropout
-
-    #######################################
-    # # ConvLSTM 레이어
-    # for params in model_params['convlstm_layers']:
-    #     kernel_width = params.pop('kernel_width')
-    #     x = ConvLSTM2D(kernel_size=(input_shape[1], kernel_width), **params)(x)
-    #     x = Dropout(model_params['dropout_rate'])(x)
-    #
-    # x = TimeDistributed(Flatten())(x)
-    #
-    # # Bidirectional LSTM 레이어
-    # for params in model_params['bilstm_layers']:
-    #     regularizer = l2(params.pop('l2_reg'))
-    #     x = Bidirectional(LSTM(kernel_regularizer=regularizer, **params))(x)
-    #     x = Dropout(model_params['dropout_rate'])(x)
-    ################################
 
     output_layer = Dense(**model_params['output_layer'])(x)
     self.model = Model(inputs=input_layer, outputs=output_layer)

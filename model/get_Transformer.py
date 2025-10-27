@@ -151,8 +151,6 @@ class AttentionPooling(Layer):
 
 def get_Transformer(self):
     """ Transformer 모델을 생성, 컴파일, 학습하고 예측하는 전체 과정을 담은 함수. """
-    tf.random.set_seed(self.config['random_state'])  # 재현성을 위한 랜덤 시드 고정
-
     # --- 1. 데이터 준비 ---
     # 샘플링 옵션에 따라 사용할 학습 데이터 선택
     if self.config.get('undersampling') or self.config.get('oversampling'):

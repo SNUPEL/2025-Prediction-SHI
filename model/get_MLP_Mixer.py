@@ -8,7 +8,6 @@ from tensorflow.keras.optimizers import Adam
 
 
 def get_MLP_Mixer(self):
-    tf.random.set_seed(self.config['random_state'])
 
     if self.config.get('undersampling') or self.config.get('oversampling'):
         X_train = np.array(list(self.data.df_x_train_matrix_dict_after_sampling.values()))

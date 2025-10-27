@@ -9,7 +9,6 @@ from tensorflow.keras.metrics import Recall
 
 
 def get_ResNet(self):
-    tf.random.set_seed(self.config['random_state'])
     if self.config['undersampling'] or self.config['oversampling']:
         X_train = np.array(list(self.data.df_x_train_matrix_dict_after_sampling.values()))
         y_train = np.array(list(self.data.df_y_train_dict_after_sampling.values()))

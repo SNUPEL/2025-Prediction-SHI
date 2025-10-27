@@ -70,7 +70,7 @@ class Model:
             for font in fonts:
                 # 폰트 매니저에 해당 폰트가 등록되어 있는지 확인
                 if font in [f.name for f in fm.fontManager.ttflist]:
-                    # 그래프 전역 폰트를 설정하고
+                    # 그래프 전역 폰트를 설정
                     plt.rcParams['font.family'] = font
                     plt.rcParams['axes.unicode_minus'] = False  # 마이너스 기호 깨짐 방지
                     return True
@@ -96,7 +96,7 @@ class Model:
         return False
 
     def make_model(self):
-        # 구성 파일에 지정된 모델 타입에 따라 분기한다
+        # 구성 파일에 지정된 모델 타입에 따라 분기
         if self.config['model_type'] == 'RandomForestClassifier':
             # 랜덤 포레스트 분류기를 학습
             get_RandomForestClassifier(self)
@@ -151,7 +151,7 @@ class Model:
             print(f"Error: config['model_type'] '{self.config['model_type']}' was not found.")
 
         if self.config['save_train_data']:
-            # 학습 입력 데이터를 엑셀로 남길지 여부 확인
+            # 학습 데이터의 엑셀 저장 여부 확인
             print(f"==== 학습 데이터 저장 시작 ====")
             # 샘플링을 수행했다면 조정된 데이터를, 아니면 원본 데이터를 사용
             if self.config['undersampling'] or self.config['oversampling']:
@@ -172,10 +172,10 @@ class Model:
                 # 현재 샘플 라벨을 조회
                 sample_label = labels_dict_to_save[sample_name]
 
-                # 라벨 정보를 파일명에 담아 구분 가능하게 만든다
+                # 라벨 정보를 파일명에 포함
                 file_name_excel = f"{sample_name}_label_{int(sample_label)}.xlsx"
 
-                # 특성 행렬을 엑셀 파일로 저장한다
+                # 특성 행렬을 엑셀 파일로 저장
                 df_sample.to_excel(os.path.join(matrix_train_folder_path, file_name_excel), index=True)
 
                 # 이후 CSV 요약 파일 작성을 위해 메타 정보를 저장
@@ -195,7 +195,7 @@ class Model:
             print(f"==== 학습 데이터 저장 완료 ====")
 
         if self.config['save_validation_data']:
-            # 검증 입력 데이터를 별도로 보관하도록 요청된 경우
+            # 검증 데이터의 엑셀 저장 여부 확인
             print(f"==== 검증 데이터 저장 시작 ====")
             matrix_dict_to_save = self.data.df_x_valid_matrix_dict
             labels_dict_to_save = self.data.df_y_valid_dict
@@ -208,13 +208,13 @@ class Model:
             labels_data = []
             # 검증 데이터 셋 전체를 순회
             for sample_name, df_sample in matrix_dict_to_save.items():
-                # 해당 샘플의 라벨을 가져온다
+                # 해당 샘플의 라벨을 호출
                 sample_label = labels_dict_to_save[sample_name]
 
                 # 검증 데이터도 라벨이 포함된 파일명으로 저장
                 file_name_excel = f"{sample_name}_label_{int(sample_label)}.xlsx"
 
-                # 특성 행렬을 엑셀 파일로 내보낸다
+                # 특성 행렬을 엑셀 파일로 저장
                 df_sample.to_excel(os.path.join(matrix_valid_folder_path, file_name_excel), index=True)
 
                 # CSV 라벨 요약 생성을 위한 정보 누적
@@ -228,7 +228,6 @@ class Model:
             labels_csv_path = os.path.join(matrix_valid_folder_path, 'valid_data_labels.csv')
             # 검증 라벨 메타데이터를 DataFrame으로 정리
             labels_df = pd.DataFrame(labels_data)
-            # CSV 파일로 내보내 추후 확인 가능하게 한다
             labels_df.to_csv(labels_csv_path, index=False, encoding='utf-8-sig')
             print(f"    총 {len(matrix_dict_to_save)}개 데이터 및 라벨 저장")
             print(f"==== 검증 데이터 저장 완료 ====")

@@ -12,6 +12,9 @@ from get_ConvLSTM import create_convlstm_5d_sequences_internal
 
 
 def save_shap_stats(self, shap_values_df):
+    """
+    shap 값들의 통계값을 저장하는 함수
+    """
     shap_values_stats_df = shap_values_df.describe()
     shap_values_stats_df.loc['평균절대값(중요도)'] = shap_values_df.abs().mean()
     sorted_columns = shap_values_stats_df.loc['평균절대값(중요도)'].sort_values(ascending=False).index
@@ -20,6 +23,9 @@ def save_shap_stats(self, shap_values_df):
 
 
 def plot_shap(self, shap_values_df, X_test):
+    """
+    shap value의 가시화 함수
+    """
     grouper = [col.split('_')[0] for col in shap_values_df.columns]
     new_columns = {}
     for name, group_df in shap_values_df.groupby(grouper, axis=1):
@@ -77,6 +83,7 @@ def get_SHAP_explainer(self):
     y_train = None
     y_test = None
 
+    # 모델 별 데이터 전처리 방식 적용
     if self.config['data_shape'] == 'flatten':
         X_train = self.data.df_x_train_flatten
         y_train = self.data.df_y_train['label']
@@ -152,6 +159,7 @@ def get_SHAP_explainer(self):
     else:
         return 0
 
+    # 모델 별 예측 함수 적용
     if self.config['model_type'] in TREE_MODELS:
         explainer = shap.TreeExplainer(self.model)
         shap_values = explainer.shap_values(X_test)
@@ -319,8 +327,6 @@ def get_SHAP_explainer(self):
 
         elif self.config['model_type'] == 'MLP_Mixer':
             pass
-            # explainer = shap.GradientExplainer(self.model, shap.sample(X_train, 20))
-            # shap_values = explainer.shap_values(X_test)
         else:
             return 0
 

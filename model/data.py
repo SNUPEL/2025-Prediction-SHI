@@ -119,7 +119,7 @@ class Data:
                 print("\n==== 데이터 undersampling 적용 시작 ====")
                 apply_undersampling(self)  # 다수 클래스 데이터 감소
                 print("==== 데이터 undersampling 적용 완료 =====\n")
-                # Undersampling 후에는 matrix 형태 데이터를 다시 만들어 주어야 할 수 있음
+                # Undersampling 후 matrix 형태 데이터로 변경
                 make_matrix_data(self)
 
         # 샘플링 적용 후, 그래프 저장이 활성화되어 있으면 다시 PCA/LDA 분석을 수행

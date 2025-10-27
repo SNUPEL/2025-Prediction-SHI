@@ -6,6 +6,7 @@ warnings.filterwarnings('ignore', message='.*Dtype inference.*deprecated.*')
 # 추가적인 pandas 경고들도 차단
 warnings.filterwarnings('ignore', category=FutureWarning)
 import time
+import random
 from config import *
 from data import *
 from model import *
@@ -27,7 +28,14 @@ if __name__ == '__main__':
     print(f"선택된 모델: {config['model_type']}")
     print("=================\n")
 
-    # 전체 랜덤 설정 코드 추가
+    # 랜덤 상태 정의
+    os.environ['PYTHONHASHSEED'] = str(config['random_state'])
+    random.seed(config['random_state'])
+    np.random.seed(config['random_state'])
+    tf.random.set_seed(config['random_state'])
+    torch.manual_seed(config['random_state'])
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(config['random_state'])
 
     data = Data(config)
     print("\n==== 데이터 로딩 시작 ====")

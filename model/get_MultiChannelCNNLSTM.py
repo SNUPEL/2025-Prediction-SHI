@@ -405,10 +405,6 @@ def get_MultiChannelCNNLSTM(self):
     # --- 2. PyTorch 학습 설정 ---
     # GPU 사용 가능 시 CUDA, 아니면 CPU를 선택
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    # 재현성을 위해 시드 고정
-    torch.manual_seed(self.config['random_state'])
-    if torch.cuda.is_available():
-        torch.cuda.manual_seed_all(self.config['random_state'])
 
     # DataLoader 생성
     # Numpy 배열을 PyTorch 텐서로 변환

@@ -7,6 +7,7 @@ import numpy as np
 
 
 def save_PCA_LDA(self, graph_name):
+    # sampling 전 후 여부를 확인
     if graph_name == 'after_split':
         df_train = self.df_train.copy()
         df_test = self.df_test.copy()
@@ -128,6 +129,7 @@ def save_PCA_LDA(self, graph_name):
     print("테스트 데이터 전용 시각화 그래프가 'data_distribution_pca_test_only.png' 파일로 저장되었습니다.")
 
     print("LDA 적용하여 1차원으로 축소 중...")
+    # 이진 분류이므로 n_components=1
     lda = LDA(n_components=1)
 
     lda.fit(self.df_x_train_flatten,  list(self.df_y_train['label']))
