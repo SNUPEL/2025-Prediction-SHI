@@ -373,34 +373,56 @@ def create_config():
         },
 
         'Transformer': {
-            'back_end': 'tensorflow',
-            'data_shape': 'matrix',
-            'undersampling': 'ENN',
-            'ENN_parameter': {'sampling_strategy': 'auto', 'n_neighbors': 7},
-            'oversampling': None,  # Borderline-TSSMOTE, TSSMOTE, SMOTE
-            'SMOTE_parameter': {'sampling_strategy': 1.0, 'k_neighbors': 5},
-            'TSSMOTE_parameter': {'sampling_strategy': 1.0, 'k_neighbors': 15},
+            # --- 데이터 및 전처리 관련 설정 ---
+            'back_end': 'tensorflow',  # 모델을 구현하고 실행할 딥러닝 프레임워크를 지정 (여기서는 'tensorflow')
+            'data_shape': 'matrix',  # 모델에 입력될 데이터의 형태를 지정 'matrix'는 (샘플 수, 시간, 피처 수) 형태의 3D 데이터를 의미
+
+            # --- 데이터 불균형 처리를 위한 샘플링 기법 설정 ---
+            'undersampling': 'ENN',  # 다수 클래스의 데이터를 줄이는 언더샘플링 기법을 선택
+            'ENN_parameter': {  # ENN 기법에 적용할 세부 파라미터입니다.
+                'sampling_strategy': 'auto',  # 자동으로 다수 클래스의 샘플을 제거하여 클래스 균형을 맞춤
+                'n_neighbors': 7  # ENN 알고리즘이 주변 샘플을 확인할 때 참고할 이웃(neighbor)의 수
+            },
+            'oversampling': None,  # 소수 클래스의 데이터를 늘리는 오버샘플링 기법을 선택
+            'SMOTE_parameter': {  # 만약 SMOTE를 사용할 경우 적용될 파라미터
+                'sampling_strategy': 1.0,  # 소수 클래스 샘플 수를 다수 클래스와 동일하게 1:1 비율로 맞춤
+                'k_neighbors': 5  # 새로운 가상 샘플을 생성할 때 참고할 이웃의 수
+            },
+            'TSSMOTE_parameter': {  # 시계열 데이터용 오버샘플링 기법인 TSSMOTE를 사용할 경우의 파라미터
+                'sampling_strategy': 1.0,
+                'k_neighbors': 15
+            },
+
+            # --- 트랜스포머 모델의 구조(아키텍처) 관련 하이퍼파라미터 ---
             'model_parameter': {
-                'embed_dim': 128,         # 각 타임스텝의 피처를 임베딩할 차원
-                'num_blocks': 4,         # 쌓을 Transformer Encoder Block의 수
-                'num_heads': 8,          # Multi-Head Attention의 헤드 수
-                'dropout_rate': 0.1,
+                'embed_dim': 128,  # 입력 데이터의 각 피처(feature) 벡터를 몇 차원으로 임베딩(압축/확장)할지 결정 모델의 표현력을 좌우
+                'num_blocks': 4,  # 트랜스포머의 핵심 연산 단위인 '인코더 블록'을 몇 개나 층층이 쌓을지 결정
+                'num_heads': 8,  # Multi-Head Attention 메커니즘에서, 시계열의 여러 특징을 동시에 학습하기 위해 어텐션을 몇 개의 '헤드'로 분할할지 결정
+                'dropout_rate': 0.1,  # 과적합(overfitting)을 방지하기 위해 각 연산 단계에서 10%의 뉴런을 랜덤하게 비활성화합니다.
                 'output_layer': {'units': 1, 'activation': 'sigmoid'}
+                # 최종 예측을 위한 출력 레이어 설정입니다. units=1, sigmoid 활성화 함수는 이진 분류(0 또는 1) 문제에 사용
             },
+
+            # --- 모델 컴파일(compile) 단계 설정 ---
             'compile_parameter': {
-                'learning_rate': 0.0001,
-                'weight_decay': 0.01,
-                'loss': 'binary_crossentropy',
-                'metrics': ['accuracy', Recall(name='recall')]  # Recall 메트릭 추가
+                'learning_rate': 0.0001,  # 모델이 정답을 향해 얼마나 큰 폭으로 가중치를 업데이트할지 결정하는 학습률
+                'weight_decay': 0.01,  # 가중치가 너무 커지는 것을 방지하여 과적합을 억제하는 정규화(regularization) 기법인 AdamW 옵티마이저의 가중치 감쇠 값
+                'loss': 'binary_crossentropy',  # 이진 분류 문제에서 모델의 예측이 실제 정답과 얼마나 다른지를 측정하는 손실 함수
+                'metrics': ['accuracy', Recall(name='recall')]
+                # 학습 및 평가 과정에서 모니터링할 지표입니다. 정확도(accuracy)와 재현율(recall)을 확인
             },
+
+            # --- 모델 학습(fit) 단계 설정 ---
             'fit_parameter': {
-                'epochs': 50,
-                'batch_size': 64,
-                'class_weight': 'auto',
-                'shuffle': True
+                'epochs': 50,  # 전체 데이터셋을 총 몇 번 반복하여 학습할지 결정
+                'batch_size': 64,  # 한 번에 몇 개의 데이터 샘플을 묶어서 모델을 학습시킬지 결정
+                'class_weight': 'auto',  # 데이터의 클래스 불균형을 해소하기 위해, 샘플 수가 적은 클래스(소수 클래스)에 더 높은 가중치를 부여하여 학습 중요도를 높임
+                'shuffle': True  # 각 에포크(epoch)를 시작하기 전에 학습 데이터를 무작위로 섞어 모델이 데이터 순서에 과적합되는 것을 방지함
             },
-            'threshold': 0.5,
-            'use_early_stopping': True,  # 콜백 사용 여부 설정
+
+            # --- 예측 및 평가 관련 설정 ---
+            'threshold': 0.5,  # 모델이 예측한 확률값이 0.5 이상일 경우를 '경영악화'(1)로 최종 판단하는 기준점
+            'use_early_stopping': True,  # 모델의 성능(예: 검증 손실)이 일정 기간 동안 개선되지 않으면, 과적합을 방지하고 불필요한 학습을 중단시킴
         },
 
         'ResNet': {
