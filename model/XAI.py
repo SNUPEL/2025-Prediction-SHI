@@ -40,14 +40,17 @@ def prediction_wrapper(model, reshaper, backend='sklearn'):
             probs = model.predict(x_reshaped, verbose=0)
             return np.hstack((1 - probs, probs))
         elif backend == 'sklearn':
-            if hasattr(model, 'predict_proba'):
-                return model.predict_proba(x_reshaped)
-            elif hasattr(model, 'decision_function'):
-                scores = model.decision_function(x_reshaped)
-                probs = 1 / (1 + np.exp(-scores))
-                return np.vstack([1 - probs, probs]).T
+            if model == 'VotingClassifier':
+                pass
             else:
-                raise AttributeError("모델에 .predict_proba() 또는 .decision_function() 메소드가 없습니다.")
+                if hasattr(model, 'predict_proba'):
+                    return model.predict_proba(x_reshaped)
+                elif hasattr(model, 'decision_function'):
+                    scores = model.decision_function(x_reshaped)
+                    probs = 1 / (1 + np.exp(-scores))
+                    return np.vstack([1 - probs, probs]).T
+                else:
+                    raise AttributeError("모델에 .predict_proba() 또는 .decision_function() 메소드가 없습니다.")
         else:
             return model.predict_proba(x_reshaped)
 

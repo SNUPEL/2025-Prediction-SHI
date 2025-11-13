@@ -163,7 +163,10 @@ def get_SHAP_explainer(self):
     if self.config['model_type'] in TREE_MODELS:
         explainer = shap.TreeExplainer(self.model)
         shap_values = explainer.shap_values(X_test)
-        shap_values_df = pd.DataFrame(shap_values[:, :, 1], columns=self.data.flattened_column_names)
+        if self.config['model_type'] == 'XGBClassifier':
+            shap_values_df = pd.DataFrame(shap_values, columns=self.data.flattened_column_names)
+        else:
+            shap_values_df = pd.DataFrame(shap_values[:,:,1], columns=self.data.flattened_column_names)
         plot_shap(self, shap_values_df, X_test)
 
     elif self.config['model_type'] in LINEAR_MODELS:
@@ -326,6 +329,8 @@ def get_SHAP_explainer(self):
             save_shap_stats(self, shap_values_df)
 
         elif self.config['model_type'] == 'MLP_Mixer':
+            pass
+        elif self.config['model_type'] == 'VotingClassifier':
             pass
         else:
             return 0

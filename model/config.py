@@ -50,7 +50,7 @@ def create_config():
     # ML model: 'RandomForestClassifier', 'AdaBoostClassifier', 'ExtraTreesClassifier',
     # 'RidgeClassifier', 'SGDClassifier', 'XGBClassifier', 'SVC', 'nuSVC', 'VotingClassifier'
     # DL model: 'ConvLSTM', 'MultiChannelCNNLSTM', 'Transformer', 'ResNet', 'MLP_Mixer', 'AutoEncoder'
-    config['model_type'] = 'RidgeClassifier'  # 사용할 모델 타입
+    config['model_type'] = 'RandomForestClassifier'  # 사용할 모델 타입
     config['shap_analysis'] = True
     config['DiCE'] = False  # True, False
 
@@ -145,7 +145,7 @@ def create_config():
                 'gamma': 0.1,               # 리프 노드 분할을 위한 최소 손실 감소
                 'min_child_weight': 1,      # 자식 노드에 필요한 최소 가중치 합
             },
-
+            'class_weight': {0: 1, 1: 1000}  # 클래스별 가중치
         },
 
         'SVC': {
@@ -212,7 +212,7 @@ def create_config():
                 'voting': 'hard',   # voting 수준: soft(소프트 보팅)/hard(하드 보팅)
                 'weights': [2, 3, 3, 5],   # estimator 가중치, SVC-nuSVC-AdaBoost-Ridge 순서
                 'n_jobs': None,       # 사용할 cpu 코어 개수
-                'flatten_transform': True       # voting이 soft일 때만 사용, transform output에 영향을 미치는 요소
+                'flatten_transform': False       # voting이 soft일 때만 사용, transform output에 영향을 미치는 요소
             },
             'class_weight': {0: 1, 1: 1000}
         },
