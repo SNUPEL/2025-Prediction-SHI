@@ -50,9 +50,9 @@ def create_config():
     # ML model: 'RandomForestClassifier', 'AdaBoostClassifier', 'ExtraTreesClassifier',
     # 'RidgeClassifier', 'SGDClassifier', 'XGBClassifier', 'SVC', 'nuSVC', 'VotingClassifier'
     # DL model: 'ConvLSTM', 'MultiChannelCNNLSTM', 'Transformer', 'ResNet', 'MLP_Mixer', 'AutoEncoder'
-    config['model_type'] = 'RandomForestClassifier'  # 사용할 모델 타입
+    config['model_type'] = 'VotingClassifier'  # 사용할 모델 타입
     config['shap_analysis'] = True
-    config['DiCE'] = False  # True, False
+    config['DiCE'] = True  # True, False
 
     model_config = {
         'RandomForestClassifier': {

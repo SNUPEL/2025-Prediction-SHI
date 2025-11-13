@@ -330,10 +330,14 @@ def get_SHAP_explainer(self):
 
         elif self.config['model_type'] == 'MLP_Mixer':
             pass
-        elif self.config['model_type'] == 'VotingClassifier':
-            pass
+
         else:
             return 0
+    elif self.config['model_type'] == 'VotingClassifier':
+        explainer = shap.KernelExplainer(self.model.predict, shap.sample(X_train, 50))
+        shap_values = explainer.shap_values(X_test)
+        shap_values_df = pd.DataFrame(shap_values[:, :, 1], columns=self.data.flattened_column_names)
+        plot_shap(self, shap_values_df, X_test)
 
     else:
         explainer = shap.KernelExplainer(self.model.predict_proba, shap.sample(X_train, 50))
