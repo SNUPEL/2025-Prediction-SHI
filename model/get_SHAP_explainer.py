@@ -68,7 +68,7 @@ def plot_shap(self, shap_values_df, X_test):
 
 def get_SHAP_explainer(self):
     TREE_MODELS = [
-        'RandomForestClassifier', 'AdaBoostClassifier',
+        'RandomForestClassifier',
         'ExtraTreesClassifier', 'XGBClassifier'
     ]
     LINEAR_MODELS = ['RidgeClassifier', 'SGDClassifier']
